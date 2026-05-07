@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: driftly-config
+  namespace: driftly
+  labels:
+    app.kubernetes.io/part-of: driftly
+data:
+  NEXT_PUBLIC_APP_URL: "http://localhost:3000"
+  NEXT_PUBLIC_SUPABASE_URL: "https://CHANGEME.supabase.co"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: "CHANGEME"

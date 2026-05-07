@@ -1,0 +1,25 @@
+node_modules
+.next
+.git
+.gitignore
+
+# Env files (secrets must stay outside the image)
+.env
+.env.*
+.env.local
+.env.local.example
+
+# IDE / OS
+.vscode
+.idea
+*.swp
+.DS_Store
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Kubernetes / Terraform (future)
+k8s/
+terraform/
