@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { LogoutButton } from "@/components/auth/logout-button";
 
 export default async function DashboardPage() {
@@ -13,13 +15,11 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("travel_preferences")
+    .select("budget_preference, travel_style, interests")
     .eq("id", user.id)
     .single();
 
-  const prefs = (profile as { travel_preferences: Record<string, unknown> } | null)
-    ?.travel_preferences;
-  if (!prefs?.onboarding_completed) {
+  if (!profile?.travel_style) {
     redirect("/onboarding");
   }
 
@@ -42,10 +42,17 @@ export default async function DashboardPage() {
             </p>
             <p>
               <span className="text-muted-foreground">Profil voyage : </span>
-              {(prefs?.travel_type as string) ?? "—"} · {(prefs?.budget as string) ?? "—"} · {(prefs?.group_type as string) ?? "—"}
+              {profile.travel_style ?? "—"} · {profile.budget_preference ?? "—"}
             </p>
           </div>
-          <LogoutButton />
+          <div className="grid gap-2">
+            <Link href="/dashboard/trips">
+              <Button variant="default" className="w-full">
+                Mes voyages
+              </Button>
+            </Link>
+            <LogoutButton />
+          </div>
         </CardContent>
       </Card>
     </main>

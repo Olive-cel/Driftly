@@ -17,13 +17,11 @@ export default async function OnboardingPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("travel_preferences")
+    .select("travel_style")
     .eq("id", user.id)
     .single();
 
-  const prefs = (profile as { travel_preferences: Record<string, unknown> } | null)
-    ?.travel_preferences;
-  if (prefs?.onboarding_completed) {
+  if (profile?.travel_style) {
     redirect("/dashboard");
   }
 

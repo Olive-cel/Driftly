@@ -1,6 +1,7 @@
 // ── Request ─────────────────────────────────────────────
 
 export interface GenerateItineraryRequest {
+  tripId?: string;
   destination: string;
   durationDays: number;
   budget: string;
@@ -40,6 +41,18 @@ export interface GeneratedItinerary {
   title: string;
   summary: string;
   days: ItineraryDay[];
+}
+
+// ── Saved itinerary (matches DB row) ─────────────────────
+
+export interface SavedItinerary {
+  id: string;
+  trip_id: string;
+  generated_content: GeneratedItinerary;
+  estimated_budget: number | null;
+  ai_model: string | null;
+  prompt_version: string | null;
+  created_at: string;
 }
 
 // ── Validation ──────────────────────────────────────────

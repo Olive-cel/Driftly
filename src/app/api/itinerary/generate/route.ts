@@ -29,13 +29,17 @@ export async function POST(request: Request) {
     // 3. Fetch user preferences
     const { data: profile } = await supabase
       .from("profiles")
-      .select("travel_preferences")
+      .select("budget_preference, travel_style, interests")
       .eq("id", user.id)
       .single();
 
-    const userPreferences = (
-      profile as { travel_preferences: Record<string, unknown> } | null
-    )?.travel_preferences ?? null;
+    const userPreferences = profile
+      ? {
+          budget_preference: profile.budget_preference,
+          travel_style: profile.travel_style,
+          interests: profile.interests,
+        }
+      : null;
 
     // 4. Generate itinerary
     const itinerary = await generateItinerary({

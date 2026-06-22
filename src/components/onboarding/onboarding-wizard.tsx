@@ -13,6 +13,7 @@ export function OnboardingWizard() {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<Partial<OnboardingAnswers>>({});
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const current = ONBOARDING_STEPS[step];
   const selectedValue = answers[current.key];
@@ -20,6 +21,7 @@ export function OnboardingWizard() {
 
   const handleSelect = useCallback((value: string) => {
     setAnswers((prev) => ({ ...prev, [current.key]: value }));
+    setError(null);
   }, [current.key]);
 
   async function handleNext() {
@@ -31,6 +33,7 @@ export function OnboardingWizard() {
     }
 
     setSaving(true);
+    setError(null);
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -39,24 +42,61 @@ export function OnboardingWizard() {
       return;
     }
 
-    const preferences = {
-      travel_type: answers.travel_type,
-      budget: answers.budget,
-      group_type: answers.group_type,
-      onboarding_completed: true,
+    // Convertir le budget en int4
+    const budgetMap: Record<string, number> = {
+      economique: 500,
+      moyen: 1500,
+      eleve: 3000,
     };
+    const budgetValue = answers.budget ? budgetMap[answers.budget] ?? null : null;
 
-    await supabase
-      .from("profiles")
-      .update({ travel_preferences: preferences } as never)
-      .eq("id", user.id);
+    try {
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          travel_style: answers.travel_type ?? null,
+          budget_preference: budgetValue,
+          interests: answers.group_type ? [answers.group_type] : [],
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
 
-    router.push("/dashboard");
-    router.refresh();
+      if (updateError) {
+        console.error("[Onboarding] Supabase UPDATE error:", {
+          code: updateError.code,
+          message: updateError.message,
+          details: updateError.details,
+          hint: updateError.hint,
+          userId: user.id,
+          payload: {
+            travel_style: answers.travel_type,
+            budget_preference: budgetValue,
+            interests: answers.group_type ? [answers.group_type] : [],
+          },
+        });
+        setError(`Erreur de sauvegarde : ${updateError.message}`);
+        setSaving(false);
+        return;
+      }
+
+      router.push("/dashboard");
+      router.refresh();
+    } catch (err) {
+      console.error("[Onboarding] Unexpected error during UPDATE:", {
+        error: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+        userId: user.id,
+      });
+      setError("Erreur inattendue lors de la sauvegarde. Veuillez réessayer.");
+      setSaving(false);
+    }
   }
 
   function handleBack() {
-    if (step > 0) setStep((s) => s - 1);
+    if (step > 0) {
+      setStep((s) => s - 1);
+      setError(null);
+    }
   }
 
   return (
@@ -91,6 +131,12 @@ export function OnboardingWizard() {
             />
           ))}
         </div>
+
+        {error && (
+          <div className="mt-6 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
       </div>
 
       {/* Actions — pinned at bottom */}
