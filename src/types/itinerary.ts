@@ -76,7 +76,7 @@ export function validateItineraryRequest(body: unknown): {
   if (typeof b.durationDays !== "number" || b.durationDays < 1 || b.durationDays > 21) {
     return { ok: false, error: "durationDays requis (1–21)" };
   }
-  if (typeof b.budget !== "string" || !b.budget.trim()) {
+  if ((typeof b.budget !== "string" && typeof b.budget !== "number") || !b.budget) {
     return { ok: false, error: "budget requis" };
   }
   if (typeof b.travelType !== "string" || !b.travelType.trim()) {
@@ -89,9 +89,10 @@ export function validateItineraryRequest(body: unknown): {
   return {
     ok: true,
     data: {
+      tripId: typeof b.tripId === "string" ? b.tripId : undefined,
       destination: b.destination.trim(),
       durationDays: b.durationDays,
-      budget: b.budget.trim(),
+      budget: typeof b.budget === "string" ? b.budget.trim() : String(b.budget),
       travelType: b.travelType.trim(),
       groupType: b.groupType.trim(),
       startDate: typeof b.startDate === "string" ? b.startDate : undefined,

@@ -1,10 +1,10 @@
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { env } from "@/lib/env";
 import type { GenerateItineraryRequest, GeneratedItinerary } from "@/types/itinerary";
 import { parseItineraryResponse } from "@/types/itinerary";
 import { buildItinerarySystemPrompt, buildItineraryUserPrompt } from "./build-itinerary-prompt";
 
-const MODEL = "claude-sonnet-4-20250514";
+const MODEL = "gpt-4o-mini";
 const MAX_TOKENS = 4096;
 
 interface GenerateOptions {
@@ -20,7 +20,7 @@ function buildMockItinerary(request: GenerateItineraryRequest): GeneratedItinera
       {
         time: "matin" as const,
         name: "Visite guidée (mock)",
-        description: `Découverte de ${request.destination} — réponse simulée, Anthropic non configuré.`,
+        description: `Découverte de ${request.destination} — réponse simulée, OpenAI non configuré.`,
         category: "visite" as const,
         duration: "3h",
       },
@@ -40,12 +40,12 @@ function buildMockItinerary(request: GenerateItineraryRequest): GeneratedItinera
         priceRange: "€€",
       },
     ],
-    tips: ["Ceci est un itinéraire de démonstration — configurez ANTHROPIC_API_KEY pour des résultats réels."],
+    tips: ["Ceci est un itinéraire de démonstration — configurez OPENAI_API_KEY pour des résultats réels."],
   }));
 
   return {
     title: `Voyage à ${request.destination} (mock)`,
-    summary: `Itinéraire simulé de ${request.durationDays} jour(s) — ANTHROPIC_API_KEY non configurée.`,
+    summary: `Itinéraire simulé de ${request.durationDays} jour(s) — OPENAI_API_KEY non configurée.`,
     days,
   };
 }
@@ -54,51 +54,77 @@ export async function generateItinerary({
   request,
   userPreferences,
 }: GenerateOptions): Promise<GeneratedItinerary> {
-  const apiKey = env.ANTHROPIC_API_KEY;
+  const apiKey = env.OPENAI_API_KEY;
 
   if (!apiKey) {
-    console.warn("[AI] ANTHROPIC_API_KEY absent ou placeholder — réponse mockée");
+    console.warn("[AI] OPENAI_API_KEY absent ou placeholder — réponse mockée");
     return buildMockItinerary(request);
   }
 
-  const client = new Anthropic({ apiKey });
-
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: MAX_TOKENS,
-    system: buildItinerarySystemPrompt(),
-    messages: [
-      {
-        role: "user",
-        content: buildItineraryUserPrompt({ request, userPreferences }),
-      },
-    ],
-  });
-
-  const textBlock = response.content.find((block) => block.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("No text content in Claude response");
-  }
-
-  const rawText = textBlock.text.trim();
-
-  let jsonString = rawText;
-  const fenceMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) {
-    jsonString = fenceMatch[1].trim();
-  }
-
-  let parsed: unknown;
   try {
-    parsed = JSON.parse(jsonString);
-  } catch {
-    throw new Error("Failed to parse Claude response as JSON");
-  }
+    const client = new OpenAI({ apiKey });
 
-  const itinerary = parseItineraryResponse(parsed, request.durationDays);
-  if (!itinerary) {
-    throw new Error("Claude response does not match expected itinerary schema");
-  }
+    console.log("[AI] Calling OpenAI API with model:", MODEL);
+    console.log("[AI] Request destination:", request.destination, "days:", request.durationDays);
+    
+    let response;
+    try {
+      response = await client.chat.completions.create({
+        model: MODEL,
+        max_tokens: MAX_TOKENS,
+        messages: [
+          {
+            role: "system",
+            content: buildItinerarySystemPrompt(),
+          },
+          {
+            role: "user",
+            content: buildItineraryUserPrompt({ request, userPreferences }),
+          },
+        ],
+      });
+      console.log("[AI] OpenAI API call succeeded");
+    } catch (apiErr) {
+      console.error("[AI] OpenAI API call failed:", apiErr instanceof Error ? apiErr.message : String(apiErr));
+      throw apiErr;
+    }
 
-  return itinerary;
+    console.log("[AI] OpenAI response received");
+
+    const textBlock = response.choices[0]?.message?.content;
+    if (!textBlock || typeof textBlock !== "string") {
+      console.error("[AI] No text content in response", { choices: response.choices });
+      throw new Error("No text content in OpenAI response");
+    }
+
+    console.log("[AI] Extracting JSON from response");
+    const rawText = textBlock.trim();
+
+    let jsonString = rawText;
+    const fenceMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (fenceMatch) {
+      jsonString = fenceMatch[1].trim();
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(jsonString);
+    } catch (parseErr) {
+      console.error("[AI] JSON parse error", { error: parseErr, rawText: rawText.substring(0, 200) });
+      throw new Error("Failed to parse OpenAI response as JSON");
+    }
+
+    console.log("[AI] Parsing itinerary response");
+    const itinerary = parseItineraryResponse(parsed, request.durationDays);
+    if (!itinerary) {
+      console.error("[AI] Response does not match schema", { parsed });
+      throw new Error("OpenAI response does not match expected itinerary schema");
+    }
+
+    console.log("[AI] Itinerary generated successfully", { days: itinerary.days.length });
+    return itinerary;
+  } catch (err) {
+    console.error("[AI] Error in generateItinerary:", err);
+    throw err;
+  }
 }

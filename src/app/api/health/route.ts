@@ -20,7 +20,7 @@ export async function GET() {
     checks.supabase = "not_configured";
   }
 
-  checks.anthropic = env.ANTHROPIC_API_KEY ? "configured" : "not_configured";
+  checks.openai = env.OPENAI_API_KEY ? "configured" : "not_configured";
 
   return NextResponse.json({
     status: "ok",
