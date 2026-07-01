@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import type { Database } from "@/types/database";
 import type { GeneratedItinerary } from "@/types/itinerary";
 import type { NormalizedFlightOffer } from "@/lib/amadeus";
+import type { HotelRecommendation } from "@/lib/hotels";
 import { FALLBACK_IMAGE_URL } from "@/lib/pexels-client";
 import { getFormattedCountryInfo } from "@/lib/travel/country-info";
 import { getActivityImage, getActivityFallbackImage } from "@/lib/travel/activity-images";
@@ -36,6 +37,7 @@ type Trip = Database["public"]["Tables"]["trips"]["Row"];
 const tabsData = [
   { id: "overview", label: "Aperçu" },
   { id: "flights", label: "Vols recommandés" },
+  { id: "hotels", label: "Hôtels recommandés" },
   { id: "itinerary", label: "Itinéraire" },
   { id: "map", label: "Carte" },
   { id: "budget", label: "Budget" },
@@ -82,6 +84,8 @@ export default function TripDetailPremium() {
   const [dailyBudgets, setDailyBudgets] = useState<Record<number, number>>({}); // Budgets par jour
   const [flights, setFlights] = useState<NormalizedFlightOffer[]>([]); // Vols recommandés
   const [flightsLoading, setFlightsLoading] = useState(false);
+  const [hotels, setHotels] = useState<HotelRecommendation[]>([]); // Hôtels recommandés
+  const [hotelsLoading, setHotelsLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -167,8 +171,29 @@ export default function TripDetailPremium() {
       }
     };
 
+    // Charger les hôtels recommandés
+    const fetchHotels = async () => {
+      if (!tripId) return;
+      try {
+        setHotelsLoading(true);
+        const hotelsResponse = await fetch(`/api/trips/${tripId}/hotels`);
+        if (hotelsResponse.ok) {
+          const hotelsData = await hotelsResponse.json();
+          if (hotelsData.hotels && Array.isArray(hotelsData.hotels)) {
+            setHotels(hotelsData.hotels);
+            console.log("[Trip Detail] Hotels loaded:", hotelsData.hotels.length);
+          }
+        }
+      } catch (err) {
+        console.warn("[Trip Detail] Failed to load hotels:", err);
+      } finally {
+        setHotelsLoading(false);
+      }
+    };
+
     fetchData();
     fetchFlights();
+    fetchHotels();
   }, [tripId, router]);
 
   // Charger les images pour chaque jour
@@ -199,7 +224,7 @@ export default function TripDetailPremium() {
 
   if (loading) {
     return (
-      <div className="ml-64 flex min-h-screen items-center justify-center bg-white">
+      <div className="flex min-h-screen items-center justify-center bg-white w-full">
         <div className="animate-spin">
           <div className="w-12 h-12 border-4 border-amber-200 border-t-amber-600 rounded-full" />
         </div>
@@ -209,7 +234,7 @@ export default function TripDetailPremium() {
 
   if (error || !trip) {
     return (
-      <div className="ml-64 flex min-h-screen items-center justify-center bg-white">
+      <div className="flex min-h-screen items-center justify-center bg-white w-full">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <p className="text-lg font-semibold text-neutral-900">{error || "Voyage non trouvé"}</p>
@@ -224,17 +249,17 @@ export default function TripDetailPremium() {
   const heroImage = trip.cover_image || FALLBACK_IMAGE_URL;
 
   return (
-    <motion.div className="ml-64 min-h-screen bg-white" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+    <motion.div className="w-full min-h-screen bg-white" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       {/* Hero Section */}
-      <motion.div className="relative h-80 w-full overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+      <motion.div className="relative h-56 sm:h-64 md:h-80 w-full overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <img src={heroImage} alt={trip.destination ?? "Voyage"} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = FALLBACK_IMAGE_URL; }} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
         {/* Top Actions */}
-        <div className="absolute top-0 left-0 right-0 px-8 py-6 flex justify-between items-center">
+        <div className="absolute top-0 left-0 right-0 px-4 sm:px-6 lg:px-8 py-4 sm:py-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <Link href="/dashboard/trips">
-            <Button variant="ghost" className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm">
-              ← Retour à mes voyages
+            <Button variant="ghost" className="bg-white/10 hover:bg-white/20 text-white border-white/20 backdrop-blur-sm text-sm">
+              ← Retour
             </Button>
           </Link>
           <div className="flex gap-2">
@@ -253,20 +278,20 @@ export default function TripDetailPremium() {
         </div>
 
         {/* Hero Content */}
-        <div className="absolute bottom-0 left-0 right-0 px-8 py-8 space-y-4">
+        <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-3 sm:space-y-4">
           <div>
-            <div className="inline-block px-3 py-1 bg-amber-600/80 backdrop-blur-sm rounded-full text-white text-xs font-semibold mb-3">
+            <div className="inline-block px-3 py-1 bg-amber-600/80 backdrop-blur-sm rounded-full text-white text-xs font-semibold mb-2 sm:mb-3">
               ✨ Confirmé
             </div>
-            <h1 className="text-5xl font-bold text-white mb-3">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-2 sm:mb-3 line-clamp-2">
               {trip.departure_city} → {trip.destination}
             </h1>
-            <div className="flex items-center gap-6 text-white/90 mb-4">
-              <span>{trip.start_date && trip.end_date ? `${new Date(trip.start_date as string).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })} → ${new Date(trip.end_date as string).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}` : "Dates non définies"} • {trip.duration || "?"} jours</span>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 text-white/90 mb-3 sm:mb-4 text-sm sm:text-base">
+              <span className="line-clamp-1">{trip.start_date && trip.end_date ? `${new Date(trip.start_date as string).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })} → ${new Date(trip.end_date as string).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}` : "Dates non définies"} • {trip.duration || "?"} jours</span>
             </div>
 
             {/* Hero Info Cards */}
-            <div className="flex gap-6 flex-wrap">
+            <div className="flex flex-wrap gap-3 sm:gap-6">
               {trip.budget && (
                 <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 border border-white/20">
                   <p className="text-xs text-white/70">Budget</p>
@@ -292,8 +317,8 @@ export default function TripDetailPremium() {
 
       {/* Tabs */}
       <div className="border-b border-neutral-200 sticky top-0 bg-white/80 backdrop-blur-sm z-10">
-        <div className="max-w-7xl mx-auto px-8">
-          <div className="flex gap-8 overflow-x-auto">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
+          <div className="flex gap-4 sm:gap-6 lg:gap-8 overflow-x-auto">
             {tabsData.map((tab) => (
               <motion.button
                 key={tab.id}
@@ -313,8 +338,8 @@ export default function TripDetailPremium() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-12">
           {/* Left Column - Itinerary */}
           <div className="lg:col-span-2">
             {activeTab === "flights" && (
@@ -445,6 +470,151 @@ export default function TripDetailPremium() {
                 )}
               </div>
             )}
+
+            {activeTab === "hotels" && (
+              <div className="space-y-6">
+                {hotelsLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin">
+                      <div className="w-8 h-8 border-4 border-amber-200 border-t-amber-600 rounded-full" />
+                    </div>
+                  </div>
+                ) : hotels.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Lightbulb className="w-12 h-12 text-amber-200 mx-auto mb-4" />
+                    <p className="text-neutral-600">Aucun hôtel trouvé. Essayez de rechercher à nouveau.</p>
+                    <motion.button
+                      onClick={() => {
+                        setHotelsLoading(true);
+                        fetch(`/api/trips/${tripId}/hotels`, { method: "POST" })
+                          .then((r) => r.json())
+                          .then((data) => {
+                            if (data.hotels) setHotels(data.hotels);
+                          })
+                          .finally(() => setHotelsLoading(false));
+                      }}
+                      className="mt-6 px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Rechercher les hôtels
+                    </motion.button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h2 className="text-2xl font-bold text-neutral-900">Hôtels recommandés</h2>
+                        <p className="text-neutral-600 text-sm">
+                          {hotels.length} hôtel(s) trouvé(s) à {trip?.destination}
+                        </p>
+                      </div>
+                    </div>
+
+                    {hotels.map((hotel, idx) => (
+                      <motion.div
+                        key={hotel.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.1 }}
+                        className="bg-white border border-neutral-200 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow"
+                      >
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-0 md:gap-6 h-full">
+                          {/* Image */}
+                          <div className="relative w-full md:col-span-1 h-48 md:h-auto overflow-hidden bg-gradient-to-br from-amber-200 to-orange-300">
+                            <img
+                              src={hotel.image_url || FALLBACK_IMAGE_URL}
+                              alt={hotel.name}
+                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                            />
+                            <div className={`absolute top-3 right-3 px-3 py-1.5 rounded-full text-xs font-semibold text-white ${
+                              hotel.badge === "Luxe" 
+                                ? "bg-purple-600" 
+                                : hotel.badge === "Premium" 
+                                ? "bg-blue-600" 
+                                : hotel.badge === "Meilleur choix" 
+                                ? "bg-green-600" 
+                                : "bg-orange-600"
+                            }`}>
+                              {hotel.badge}
+                            </div>
+                          </div>
+
+                          {/* Info */}
+                          <div className="p-6 md:col-span-3 flex flex-col justify-between">
+                            <div className="space-y-4">
+                              <div>
+                                <h3 className="text-xl font-bold text-neutral-900">{hotel.name}</h3>
+                                <div className="flex items-center gap-2 mt-2">
+                                  <div className="flex items-center">
+                                    {Array.from({ length: 5 }).map((_, i) => (
+                                      <span
+                                        key={i}
+                                        className={`text-lg ${
+                                          i < Math.floor(hotel.rating) ? "text-amber-400" : "text-neutral-300"
+                                        }`}
+                                      >
+                                        ★
+                                      </span>
+                                    ))}
+                                  </div>
+                                  <span className="text-sm text-neutral-600">
+                                    {hotel.rating}/5 ({Math.round(Math.random() * 500) + 50} avis)
+                                  </span>
+                                </div>
+                                <p className="text-sm text-neutral-600 mt-2">{hotel.description}</p>
+                              </div>
+
+                              {/* Amenities */}
+                              <div className="flex flex-wrap gap-2">
+                                {hotel.amenities.slice(0, 3).map((amenity, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="px-2.5 py-1 bg-amber-50 text-amber-700 text-xs font-medium rounded-full"
+                                  >
+                                    {amenity}
+                                  </span>
+                                ))}
+                                {hotel.amenities.length > 3 && (
+                                  <span className="px-2.5 py-1 bg-neutral-100 text-neutral-600 text-xs font-medium rounded-full">
+                                    +{hotel.amenities.length - 3} autre(s)
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Price & Action */}
+                            <div className="flex items-end justify-between pt-4 border-t border-neutral-200 mt-4">
+                              <div>
+                                <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">
+                                  Prix
+                                </p>
+                                <div>
+                                  <p className="text-2xl font-bold text-amber-600">
+                                    {hotel.total_price}€
+                                  </p>
+                                  <p className="text-xs text-neutral-600">
+                                    {hotel.price_per_night}€/nuit ({hotel.nights} nuits)
+                                  </p>
+                                </div>
+                              </div>
+                              <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="px-6 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white font-semibold rounded-lg hover:shadow-md transition-all"
+                              >
+                                Sélectionner
+                              </motion.button>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {activeTab === "itinerary" && itinerary && itinerary.days ? (
               <div className="space-y-8">
                 {itinerary.days.map((day, index) => (

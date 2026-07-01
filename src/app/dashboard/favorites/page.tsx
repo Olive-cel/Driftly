@@ -28,6 +28,15 @@ export default function FavoritesPage() {
 
   useEffect(() => {
     loadFavorites();
+    
+    // Reload favorites when the window regains focus
+    const handleFocus = () => {
+      console.log("[Favorites Page] Window focus - reloading favorites");
+      loadFavorites();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -76,24 +85,19 @@ export default function FavoritesPage() {
     router.push(`/dashboard/trips/new?destination=${encodeURIComponent(destination)}`);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleImageError = (e: any) => {
-    e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'%3E%3Crect fill='%23f3f4f6' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3EImage indisponible%3C/text%3E%3C/svg%3E";
-  };
-
   const inspirationFavorites = favorites.filter((f) => f.type === "inspiration");
   const tripFavorites = favorites.filter((f) => f.type === "trip");
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-neutral-50 via-white to-neutral-50 py-12 px-4">
-      <div className="max-w-6xl mx-auto">
+    <div className="w-full min-h-screen bg-gradient-to-b from-neutral-50 via-white to-neutral-50 py-12 px-4">
+      <div className="w-full">
         <div className="space-y-8">
           <div className="text-center space-y-4">
             <h1 className="text-4xl font-bold text-neutral-900 flex items-center justify-center gap-2">
               <Heart className="w-8 h-8 text-red-500 fill-red-500" />
               Mes favoris
             </h1>
-            <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
+            <p className="text-lg text-neutral-600">
               Destinations et voyages que vous avez ajoutés à vos favoris
             </p>
           </div>
@@ -138,6 +142,7 @@ export default function FavoritesPage() {
                             id: fav.item_id,
                             destination: fav.destination,
                             country: fav.country || "",
+                            title: fav.title || fav.destination,
                             description: fav.metadata?.description || "",
                             estimatedPrice: fav.metadata?.estimatedPrice || 0,
                             travelStyle: fav.metadata?.travelStyle || "budget",
@@ -152,7 +157,6 @@ export default function FavoritesPage() {
                             }
                           }}
                           onCreateTrip={() => handleCreateTrip(fav.destination)}
-                          onImageError={handleImageError}
                         />
                       </div>
                     ))}

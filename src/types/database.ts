@@ -145,28 +145,42 @@ export interface Database {
       hotel_searches: {
         Row: {
           id: string;
-          trip_id: string;
-          provider: string | null;
-          search_params: Json;
+          user_id: string;
+          trip_id: string | null;
+          destination: string;
+          checkin_date: string;
+          checkout_date: string;
+          guests: number;
+          rooms: number;
           results: Json;
-          average_price: number | null;
+          best_price: number | null;
           currency: string;
           created_at: string;
         };
         Insert: {
           id?: string;
-          trip_id: string;
-          provider?: string | null;
-          search_params?: Json;
+          user_id: string;
+          trip_id?: string | null;
+          destination: string;
+          checkin_date: string;
+          checkout_date: string;
+          guests?: number;
+          rooms?: number;
           results?: Json;
-          average_price?: number | null;
+          best_price?: number | null;
           currency?: string;
         };
         Update: {
-          provider?: string | null;
-          search_params?: Json;
+          id?: string;
+          user_id?: string;
+          trip_id?: string | null;
+          destination?: string;
+          checkin_date?: string;
+          checkout_date?: string;
+          guests?: number;
+          rooms?: number;
           results?: Json;
-          average_price?: number | null;
+          best_price?: number | null;
           currency?: string;
         };
         Relationships: [];

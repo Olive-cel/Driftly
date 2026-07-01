@@ -27,6 +27,8 @@ export interface Favorite {
 export async function getFavorites(userId: string): Promise<Favorite[]> {
   const supabase = createClient();
 
+  console.log(`[Favorites Service] getFavorites: userId=${userId}`);
+
   const { data, error } = await supabase
     .from("favorites")
     .select("*")
@@ -34,9 +36,12 @@ export async function getFavorites(userId: string): Promise<Favorite[]> {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("[getFavorites]", error);
+    console.error(`[Favorites Service] getFavorites error:`, error);
     return [];
   }
+
+  const count = (data || []).length;
+  console.log(`[Favorites Service] getFavorites: Found ${count} favorites`);
 
   return (data || []) as Favorite[];
 }
@@ -75,6 +80,8 @@ export async function isFavorite(
 ): Promise<boolean> {
   const supabase = createClient();
 
+  console.log(`[Favorites Service] isFavorite: userId=${userId}, itemId=${itemId}, type=${type}`);
+
   const { data, error } = await supabase
     .from("favorites")
     .select("id")
@@ -84,11 +91,14 @@ export async function isFavorite(
     .maybeSingle();
 
   if (error) {
-    console.error("[isFavorite]", error);
+    console.error(`[Favorites Service] isFavorite error:`, error);
     return false;
   }
 
-  return !!data;
+  const result = !!data;
+  console.log(`[Favorites Service] isFavorite: result=${result}`);
+
+  return result;
 }
 
 /**
@@ -107,21 +117,37 @@ export async function toggleFavorite(
 ): Promise<boolean> {
   const supabase = createClient();
 
+  console.log(`[Favorites Service] toggleFavorite: userId=${userId}, type=${type}, itemId=${itemId}`);
+
   // Check if already favorited
   const alreadyFavorite = await isFavorite(userId, itemId, type);
 
   if (alreadyFavorite) {
     // Remove favorite
-    await supabase
+    console.log(`[Favorites Service] toggleFavorite: Removing favorite`);
+    const { error } = await supabase
       .from("favorites")
       .delete()
       .eq("user_id", userId)
       .eq("item_id", itemId)
       .eq("type", type);
 
+    if (error) {
+      console.error(`[Favorites Service] toggleFavorite delete error:`, error);
+      throw error;
+    }
+
+    console.log(`[Favorites Service] toggleFavorite: Removed successfully`);
     return false;
   } else {
     // Add favorite
+    console.log(`[Favorites Service] toggleFavorite: Adding favorite with payload:`, {
+      title,
+      destination,
+      country,
+      image_url: imageUrl,
+    });
+
     const { error } = await supabase.from("favorites").insert({
       user_id: userId,
       type,
@@ -134,10 +160,11 @@ export async function toggleFavorite(
     } as FavoriteRow);
 
     if (error) {
-      console.error("[toggleFavorite insert]", error);
+      console.error(`[Favorites Service] toggleFavorite insert error:`, error);
       throw error;
     }
 
+    console.log(`[Favorites Service] toggleFavorite: Added successfully`);
     return true;
   }
 }
@@ -152,6 +179,8 @@ export async function removeFavorite(
 ): Promise<void> {
   const supabase = createClient();
 
+  console.log(`[Favorites Service] removeFavorite: userId=${userId}, itemId=${itemId}, type=${type}`);
+
   const { error } = await supabase
     .from("favorites")
     .delete()
@@ -160,7 +189,9 @@ export async function removeFavorite(
     .eq("type", type);
 
   if (error) {
-    console.error("[removeFavorite]", error);
+    console.error(`[Favorites Service] removeFavorite error:`, error);
     throw error;
   }
+
+  console.log(`[Favorites Service] removeFavorite: Removed successfully`);
 }

@@ -178,7 +178,7 @@ export default function TripsListPremium() {
 
       {/* Main Content Grid */}
       <div className="px-8 py-8">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Left Column - Trips List (3 cols) */}
           <div className="lg:col-span-3 space-y-4">
             {loading ? (

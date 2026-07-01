@@ -48,7 +48,11 @@ const itemVariants = {
   show: { opacity: 1, x: 0, transition: { duration: 0.3 } },
 };
 
-export function Sidebar() {
+export function Sidebar({
+  setSidebarOpen,
+}: {
+  setSidebarOpen: (open: boolean) => void;
+}) {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [tripCounts, setTripCounts] = useState({ total: 0, upcoming: 0, ongoing: 0, completed: 0 });
@@ -93,12 +97,19 @@ export function Sidebar() {
     router.push("/login");
   };
 
+  const handleNavClick = () => {
+    // Close sidebar on mobile when a link is clicked
+    if (window.innerWidth < 1024) {
+      setSidebarOpen(false);
+    }
+  };
+
   return (
     <motion.aside
       initial={{ x: -300, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-white via-white to-amber-50 border-r border-neutral-100 flex flex-col shadow-sm"
+      className="fixed left-0 top-0 h-screen w-64 bg-gradient-to-b from-white via-white to-amber-50 border-r border-neutral-100 flex flex-col shadow-sm lg:relative lg:shadow-none z-50"
     >
       {/* Logo */}
       <motion.div
@@ -132,6 +143,7 @@ export function Sidebar() {
             <Link
               href={item.href}
               passHref
+              onClick={handleNavClick}
               className="group flex items-center gap-3 px-4 py-3 text-neutral-700 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition-all duration-200"
             >
               <item.icon className="w-5 h-5 group-hover:scale-110 transition-transform" />

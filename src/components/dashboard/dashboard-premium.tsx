@@ -6,9 +6,9 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import type { Database } from "@/types/database";
 import { FALLBACK_IMAGE_URL } from "@/lib/unsplash-client";
-import { getRecommendedInspirations } from "@/lib/inspirations-service";
 import { getPersonalizedRecommendations, getAllRecommendations, enrichRecommendationsWithImages } from "@/lib/travel/recommendations";
 import type { Recommendation } from "@/lib/travel/recommendations";
+import type { Inspiration } from "@/lib/inspirations-service";
 import { getTripStatus, countTripsByStatus } from "@/lib/trips/trip-status";
 import {
   Plane,
@@ -77,24 +77,44 @@ export default function DashboardPremium() {
         if (profileResponse.ok) {
           const profileData = await profileResponse.json();
 
-          // Get recommended inspirations (unified source)
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const recInspirations = getRecommendedInspirations(profileData.profile, 4);
-          // Note: recInspirations will be used in future refactor
-
-          // Get trips for recommendations
-          const tripsForRecs = await (await fetch("/api/trips")).json();
-
-          // Also keep recommendations for compatibility
-          let recs = getPersonalizedRecommendations(profileData.profile, tripsForRecs.trips || []);
-
-          if (recs.length === 0) {
-            recs = getAllRecommendations().slice(0, 8);
+          // Fetch enriched inspirations from the unified API
+          try {
+            const inspirationsResponse = await fetch("/api/inspirations");
+            if (inspirationsResponse.ok) {
+              const inspirationsData = await inspirationsResponse.json();
+              
+              // Convert inspirations to recommendations format for display
+              const inspirationRecs = (inspirationsData.inspirations || []).slice(0, 4).map((insp: Inspiration) => ({
+                destination: insp.destination,
+                country: insp.country,
+                priceFrom: insp.estimatedPrice,
+                imageUrl: insp.imageUrl,
+                rating: insp.rating || 4.5,
+                reason: insp.description,
+              }));
+              
+              setRecommendations(inspirationRecs);
+            } else {
+              // Fallback to old system if new API fails
+              const tripsForRecs = await (await fetch("/api/trips")).json();
+              let recs = getPersonalizedRecommendations(profileData.profile, tripsForRecs.trips || []);
+              if (recs.length === 0) {
+                recs = getAllRecommendations().slice(0, 8);
+              }
+              const enrichedRecs = await enrichRecommendationsWithImages(recs);
+              setRecommendations(enrichedRecs);
+            }
+          } catch (err) {
+            console.warn("[Dashboard] Failed to fetch inspirations, using fallback:", err);
+            // Fallback to old system
+            const tripsForRecs = await (await fetch("/api/trips")).json();
+            let recs = getPersonalizedRecommendations(profileData.profile, tripsForRecs.trips || []);
+            if (recs.length === 0) {
+              recs = getAllRecommendations().slice(0, 8);
+            }
+            const enrichedRecs = await enrichRecommendationsWithImages(recs);
+            setRecommendations(enrichedRecs);
           }
-
-          // Enrichir avec les images Unsplash
-          const enrichedRecs = await enrichRecommendationsWithImages(recs);
-          setRecommendations(enrichedRecs);
         }
       } catch (err) {
         console.error("Erreur lors du chargement des données:", err);
@@ -156,14 +176,14 @@ export default function DashboardPremium() {
 
   return (
     <motion.div
-      className="ml-64 min-h-screen bg-white"
+      className="w-full min-h-screen bg-white"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
       {/* Hero Section avec image immersive */}
       <motion.section
-        className="relative h-80 w-full overflow-hidden rounded-3xl mx-8 mt-8 mb-8"
+        className="relative h-56 sm:h-64 md:h-80 w-full overflow-hidden rounded-none sm:rounded-2xl sm:mx-4 sm:mt-4 sm:mb-4 md:rounded-3xl md:mx-8 md:mt-8 md:mb-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
@@ -240,14 +260,14 @@ export default function DashboardPremium() {
       </motion.section>
 
       {/* Main Content Grid */}
-      <div className="px-8 pb-12">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="px-4 sm:px-6 lg:px-8 pb-12">
+        <div className="w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
             {/* Left Column (3 cols) - Main Content */}
-            <div className="lg:col-span-3 space-y-8">
+            <div className="lg:col-span-3 space-y-6 lg:space-y-8">
               {/* Stats Section */}
               <motion.div
-                className="grid grid-cols-4 gap-4"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
                 variants={containerVariants}
                 initial="hidden"
                 animate="show"
@@ -285,7 +305,7 @@ export default function DashboardPremium() {
                     </Link>
                   </div>
 
-                  <div className="grid grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     {trips.slice(0, 4).map((trip) => {
                       const statusInfo = getTripStatus(trip, itineraries[trip.id]);
                       return (
@@ -367,12 +387,12 @@ export default function DashboardPremium() {
                 >
                   <div className="flex justify-between items-center">
                     <h2 className="text-2xl font-bold text-neutral-900">Inspirations pour vous</h2>
-                    <Link href="#" className="text-amber-600 hover:text-amber-700 flex items-center gap-1 font-medium text-sm">
+                    <Link href="/dashboard/inspiration" className="text-amber-600 hover:text-amber-700 flex items-center gap-1 font-medium text-sm">
                       Voir plus <ChevronRight className="w-4 h-4" />
                     </Link>
                   </div>
 
-                  <div className="grid grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     {recommendations.slice(0, 4).map((rec) => (
                       <motion.div
                         key={rec.destination}

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -19,6 +19,7 @@ interface FormData {
 
 export default function NewTripPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
@@ -31,6 +32,20 @@ export default function NewTripPage() {
     travel_style: "",
     interests: "",
   });
+
+  // Initialize form from query params (from inspiration page)
+  useEffect(() => {
+    const destination = searchParams.get("destination");
+    const travel_style = searchParams.get("travel_style");
+
+    if (destination) {
+      setFormData((prev) => ({
+        ...prev,
+        destination,
+        travel_style: travel_style || prev.travel_style,
+      }));
+    }
+  }, [searchParams]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
