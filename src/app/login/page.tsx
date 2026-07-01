@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { LoginForm } from "@/components/auth/login-form";
 import { OAuthButtons } from "@/components/auth/oauth-buttons";
+import { BRAND } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "Connexion — VoyageAI",
+  title: `Connexion — ${BRAND.name}`,
 };
 
 export default async function LoginPage() {
@@ -22,7 +23,7 @@ export default async function LoginPage() {
     <main className="flex min-h-screen items-center justify-center px-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">VoyageAI ✈️</CardTitle>
+          <CardTitle className="text-2xl">{BRAND.name} {BRAND.logo}</CardTitle>
           <CardDescription>Connectez-vous à votre compte</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">

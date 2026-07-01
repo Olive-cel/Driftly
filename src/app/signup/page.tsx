@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { SignupForm } from "@/components/auth/signup-form";
 import { OAuthButtons } from "@/components/auth/oauth-buttons";
+import { BRAND } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "Inscription — VoyageAI",
+  title: `Inscription — ${BRAND.name}`,
 };
 
 export default async function SignupPage() {
@@ -22,7 +23,7 @@ export default async function SignupPage() {
     <main className="flex min-h-screen items-center justify-center px-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">VoyageAI ✈️</CardTitle>
+          <CardTitle className="text-2xl">{BRAND.name} {BRAND.logo}</CardTitle>
           <CardDescription>Créer votre compte</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">

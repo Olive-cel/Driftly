@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { BRAND, APP_DESCRIPTION } from "@/lib/brand";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "VoyageAI",
-  description: "Your AI-powered travel planner",
+  title: BRAND.name,
+  description: APP_DESCRIPTION,
 };
 
 export default function RootLayout({

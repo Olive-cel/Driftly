@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
+import { BRAND } from "@/lib/brand";
 
 export const metadata: Metadata = {
-  title: "Onboarding — VoyageAI",
+  title: `Onboarding — ${BRAND.name}`,
 };
 
 export default async function OnboardingPage() {

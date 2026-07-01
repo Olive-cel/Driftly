@@ -1,3 +1,5 @@
+import { BRAND } from "@/lib/brand";
+
 const FEATURES = [
   {
     icon: (
@@ -53,7 +55,7 @@ export function Features() {
             Tout ce qu&apos;il faut pour voyager mieux
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            De l&apos;inspiration à la réservation, VoyageAI gère chaque étape de votre prochain voyage.
+            De l&apos;inspiration à la réservation, {BRAND.name} gère chaque étape de votre prochain voyage.
           </p>
         </div>
 

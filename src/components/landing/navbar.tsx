@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { BRAND } from "@/lib/brand";
 
 export function Navbar() {
   return (
     <header className="fixed top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-lg">
       <nav className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2 text-lg font-bold tracking-tight">
-          <span className="text-xl">✈️</span>
-          VoyageAI
+          <span className="text-xl">{BRAND.logo}</span>
+          {BRAND.name}
         </Link>
 
         <div className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
@@ -18,7 +19,7 @@ export function Navbar() {
             Comment ça marche
           </a>
           <a href="#why-us" className="transition-colors hover:text-foreground">
-            Pourquoi VoyageAI
+            Pourquoi {BRAND.name}
           </a>
         </div>
 

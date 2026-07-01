@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { BRAND } from "@/lib/brand";
 
 const DIFFERENTIATORS = [
   {
     emoji: "🧠",
     title: "IA qui apprend",
-    description: "Plus vous utilisez VoyageAI, plus les recommandations sont pertinentes. Votre profil voyageur s'affine à chaque interaction.",
+    description: `Plus vous utilisez ${BRAND.name}, plus les recommandations sont pertinentes. Votre profil voyageur s'affine à chaque interaction.`,
   },
   {
     emoji: "⚡",
@@ -30,13 +31,13 @@ export function WhyUs() {
       <div className="mx-auto max-w-6xl">
         <div className="text-center">
           <p className="text-sm font-semibold uppercase tracking-widest text-blue-600">
-            Pourquoi VoyageAI
+            Pourquoi {BRAND.name}
           </p>
           <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
             Pas un énième comparateur de vols
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
-            VoyageAI est un assistant de voyage intelligent qui pense comme vous — en mieux.
+            {BRAND.name} est un assistant de voyage intelligent qui pense comme vous — en mieux.
           </p>
         </div>
 
@@ -66,7 +67,7 @@ export function WhyUs() {
               Prêt à planifier votre prochain voyage ?
             </h3>
             <p className="mx-auto mt-4 max-w-xl text-base text-blue-100">
-              Rejoignez des milliers de voyageurs qui planifient plus intelligemment avec VoyageAI.
+              Rejoignez des milliers de voyageurs qui planifient plus intelligemment avec {BRAND.name}.
             </p>
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Button
