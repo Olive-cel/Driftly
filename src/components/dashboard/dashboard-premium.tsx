@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import type { Database } from "@/types/database";
 import { FALLBACK_IMAGE_URL } from "@/lib/unsplash-client";
+import { getRecommendedInspirations } from "@/lib/inspirations-service";
 import { getPersonalizedRecommendations, getAllRecommendations, enrichRecommendationsWithImages } from "@/lib/travel/recommendations";
 import type { Recommendation } from "@/lib/travel/recommendations";
 import { getTripStatus, countTripsByStatus } from "@/lib/trips/trip-status";
@@ -76,9 +77,15 @@ export default function DashboardPremium() {
         if (profileResponse.ok) {
           const profileData = await profileResponse.json();
 
-          // Get personalized recommendations or fallback to all
+          // Get recommended inspirations (unified source)
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const recInspirations = getRecommendedInspirations(profileData.profile, 4);
+          // Note: recInspirations will be used in future refactor
+
+          // Get trips for recommendations
           const tripsForRecs = await (await fetch("/api/trips")).json();
 
+          // Also keep recommendations for compatibility
           let recs = getPersonalizedRecommendations(profileData.profile, tripsForRecs.trips || []);
 
           if (recs.length === 0) {

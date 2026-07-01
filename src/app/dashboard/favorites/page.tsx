@@ -134,13 +134,17 @@ export default function FavoritesPage() {
                     {inspirationFavorites.map((fav) => (
                       <div key={fav.id} className="relative">
                         <InspirationCard
-                          id={fav.item_id}
-                          destination={fav.destination}
-                          country={fav.country || ""}
-                          description={fav.metadata?.description || ""}
-                          estimatedPrice={fav.metadata?.estimatedPrice || 0}
-                          travelStyle={fav.metadata?.travelStyle || "budget"}
-                          imageUrl={fav.image_url || ""}
+                          inspiration={{
+                            id: fav.item_id,
+                            destination: fav.destination,
+                            country: fav.country || "",
+                            description: fav.metadata?.description || "",
+                            estimatedPrice: fav.metadata?.estimatedPrice || 0,
+                            travelStyle: fav.metadata?.travelStyle || "budget",
+                            imageQuery: fav.destination,
+                            tags: fav.metadata?.tags || [],
+                            rating: fav.metadata?.rating,
+                          }}
                           isFavorite={true}
                           onToggleFavorite={(isFavorite) => {
                             if (!isFavorite) {

@@ -5,19 +5,16 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { InspirationCard } from "@/components/dashboard/inspiration-card";
-import {
-  filterInspirationsForProfile,
-  InspirationDestination,
-} from "@/lib/travel/inspirations";
-import { Loader2, Sparkles } from "lucide-react";
+import { getInspirations, type Inspiration } from "@/lib/inspirations-service";
+import { Loader2, Sparkles, ArrowRight } from "lucide-react";
 
 export default function InspirationPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [inspirations, setInspirations] = useState<InspirationDestination[]>([]);
+  const [inspirations, setInspirations] = useState<Inspiration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     loadData();
@@ -35,22 +32,18 @@ export default function InspirationPage() {
         return;
       }
 
-      // Load profile for personalization
+      // Load profile for filtering
       const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
         .single();
 
-      // Get inspirations filtered by profile
-      const budgetPref = profileData?.budget_preference ? String(profileData.budget_preference) : null;
-      const insps = filterInspirationsForProfile(
-        profileData?.travel_style,
-        budgetPref
-      );
-      setInspirations(insps);
+      // Get all inspirations filtered by profile
+      const allInspirations = getInspirations(profileData);
+      setInspirations(allInspirations);
 
-      // Load user's favorites (inspiration type only)
+      // Load user's favorite inspiration IDs
       const { data: userFavorites } = await supabase
         .from("favorites")
         .select("item_id")
@@ -59,10 +52,10 @@ export default function InspirationPage() {
 
       if (userFavorites) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        setFavorites(new Set(userFavorites.map((f: any) => f.item_id)));
+        setFavoriteIds(new Set(userFavorites.map((f: any) => f.item_id)));
       }
     } catch (err) {
-      console.error("Error:", err);
+      console.error("Error loading inspiration data:", err);
     } finally {
       setIsLoading(false);
     }
@@ -73,7 +66,7 @@ export default function InspirationPage() {
   };
 
   const handleToggleFavorite = (inspirationId: string, isFavorite: boolean) => {
-    setFavorites((prev) => {
+    setFavoriteIds((prev) => {
       const newSet = new Set(prev);
       if (isFavorite) {
         newSet.add(inspirationId);
@@ -86,7 +79,8 @@ export default function InspirationPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleImageError = (e: any) => {
-    e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'%3E%3Crect fill='%23f3f4f6' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3EImage indisponible%3C/text%3E%3C/svg%3E";
+    e.target.src =
+      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 300'%3E%3Crect fill='%23f3f4f6' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' font-size='24' fill='%239ca3af' text-anchor='middle' dominant-baseline='middle'%3EImage indisponible%3C/text%3E%3C/svg%3E";
   };
 
   return (
@@ -99,8 +93,7 @@ export default function InspirationPage() {
               Inspirations de voyage
             </h1>
             <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-              Découvrez des destinations magiques recommandées selon vos préférences.
-              Cliquez sur le cœur pour ajouter aux favoris.
+              Découvrez des destinations magiques personnalisées selon vos préférences.
             </p>
           </div>
 
@@ -113,16 +106,8 @@ export default function InspirationPage() {
               {inspirations.map((inspiration) => (
                 <InspirationCard
                   key={inspiration.id}
-                  id={inspiration.id}
-                  destination={inspiration.destination}
-                  country={inspiration.country}
-                  description={inspiration.description}
-                  estimatedPrice={inspiration.estimatedPrice}
-                  travelStyle={inspiration.travelStyle}
-                  imageUrl={`https://images.pexels.com/search/${encodeURIComponent(
-                    inspiration.imageQuery
-                  )}?auto=compress&cs=tinysrgb&w=400&h=300`}
-                  isFavorite={favorites.has(inspiration.id)}
+                  inspiration={inspiration}
+                  isFavorite={favoriteIds.has(inspiration.id)}
                   onToggleFavorite={(isFavorite) =>
                     handleToggleFavorite(inspiration.id, isFavorite)
                   }
@@ -146,17 +131,19 @@ export default function InspirationPage() {
           <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-8 text-center text-white space-y-4">
             <h2 className="text-2xl font-bold">Prêt à voyager?</h2>
             <p className="text-amber-50">
-              Ajoutez vos destinations préférées aux favoris ou créez un voyage dès maintenant.
+              Marquez vos destinations préférées en favori et créez des voyages inoubliables.
             </p>
             <div className="flex justify-center gap-4 flex-wrap">
               <Link href="/dashboard">
-                <button className="bg-white text-amber-600 hover:bg-amber-50 font-semibold px-6 py-2 rounded-lg transition-all">
+                <button className="inline-flex items-center gap-2 bg-white text-amber-600 hover:bg-amber-50 font-semibold px-6 py-3 rounded-lg transition-all">
                   Tableau de bord
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </Link>
               <Link href="/dashboard/favorites">
-                <button className="border-2 border-white text-white hover:bg-white/10 font-semibold px-6 py-2 rounded-lg transition-all">
+                <button className="inline-flex items-center gap-2 border-2 border-white text-white hover:bg-white/10 font-semibold px-6 py-3 rounded-lg transition-all">
                   Mes favoris
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </Link>
             </div>

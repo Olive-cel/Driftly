@@ -1,17 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Heart, MapPin, DollarSign } from "lucide-react";
+import { Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { Inspiration } from "@/lib/inspirations-service";
 
 interface InspirationCardProps {
-  id: string;
-  destination: string;
-  country: string;
-  description: string;
-  estimatedPrice: number;
-  travelStyle: string;
-  imageUrl: string;
+  inspiration: Inspiration;
   isFavorite?: boolean;
   onToggleFavorite?: (isFavorite: boolean) => void;
   onCreateTrip?: () => void;
@@ -19,13 +14,7 @@ interface InspirationCardProps {
 }
 
 export function InspirationCard({
-  id,
-  destination,
-  country,
-  description,
-  estimatedPrice,
-  travelStyle,
-  imageUrl,
+  inspiration,
   isFavorite = false,
   onToggleFavorite,
   onCreateTrip,
@@ -46,12 +35,16 @@ export function InspirationCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: "inspiration",
-          item_id: id,
-          title: destination,
-          destination,
-          country,
-          image_url: imageUrl,
-          metadata: { travelStyle, estimatedPrice },
+          item_id: inspiration.id,
+          title: inspiration.destination,
+          destination: inspiration.destination,
+          country: inspiration.country,
+          image_url: `https://images.pexels.com/search/${encodeURIComponent(inspiration.imageQuery)}?auto=compress&cs=tinysrgb&w=400&h=300`,
+          metadata: {
+            travelStyle: inspiration.travelStyle,
+            estimatedPrice: inspiration.estimatedPrice,
+            rating: inspiration.rating,
+          },
         }),
       });
 
@@ -73,8 +66,8 @@ export function InspirationCard({
       {/* Image */}
       <div className="relative h-48 overflow-hidden bg-gradient-to-br from-amber-200 to-orange-300">
         <img
-          src={imageUrl}
-          alt={destination}
+          src={`https://images.pexels.com/search/${encodeURIComponent(inspiration.imageQuery)}?auto=compress&cs=tinysrgb&w=400&h=300`}
+          alt={inspiration.destination}
           onError={onImageError}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
         />
@@ -89,34 +82,46 @@ export function InspirationCard({
         >
           <Heart
             className={`w-5 h-5 transition-colors ${
-              localIsFavorite
-                ? "text-red-500 fill-red-500"
-                : "text-gray-400"
+              localIsFavorite ? "text-red-500 fill-red-500" : "text-gray-400"
             }`}
           />
         </button>
 
         {/* Style Badge */}
         <div className="absolute top-3 left-3 bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
-          {travelStyle}
+          {inspiration.travelStyle}
         </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 p-6 flex flex-col gap-4">
         <div>
-          <h3 className="text-2xl font-bold text-neutral-900">{destination}</h3>
-          <p className="text-sm text-neutral-500 mt-1 flex items-center gap-1">
-            <MapPin className="w-4 h-4" /> {country}
-          </p>
-          <p className="text-sm text-neutral-600 mt-2">{description}</p>
+          <h3 className="text-2xl font-bold text-neutral-900">{inspiration.destination}</h3>
+          <p className="text-sm text-neutral-500 mt-1">{inspiration.country}</p>
+          <p className="text-sm text-neutral-600 mt-2">{inspiration.description}</p>
+        </div>
+
+        {/* Tags */}
+        <div className="flex flex-wrap gap-2">
+          {inspiration.tags?.slice(0, 2).map((tag) => (
+            <span
+              key={tag}
+              className="text-xs bg-amber-50 text-amber-700 px-3 py-1 rounded-full font-medium"
+            >
+              {tag}
+            </span>
+          ))}
         </div>
 
         {/* Footer */}
         <div className="flex items-center justify-between pt-4 border-t border-neutral-200 mt-auto">
-          <div className="flex items-center gap-2 text-amber-600 font-semibold">
-            <DollarSign className="w-4 h-4" />
-            <span>~{estimatedPrice}€/j</span>
+          <div className="flex flex-col gap-1">
+            <span className="text-sm text-amber-600 font-semibold">
+              ~{inspiration.estimatedPrice}€/jour
+            </span>
+            {inspiration.rating && (
+              <span className="text-xs text-neutral-500">⭐ {inspiration.rating}</span>
+            )}
           </div>
           <Button
             onClick={onCreateTrip}
