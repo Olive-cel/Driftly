@@ -1,6 +1,6 @@
 # Monitoring — Grafana & Prometheus
 
-Stack de monitoring pour observer les métriques Kubernetes pendant les tests de charge Driftly.
+Stack complète de monitoring pour Kubernetes et l'application Driftly.
 
 ## 1. Prérequis
 
@@ -17,7 +17,7 @@ helm install monitoring prometheus-community/kube-prometheus-stack \
   -n monitoring --create-namespace
 ```
 
-Vérifier que tous les pods sont Running :
+Vérifier les pods:
 
 ```bash
 kubectl get pods -n monitoring
@@ -29,63 +29,134 @@ kubectl get pods -n monitoring
 kubectl port-forward svc/monitoring-grafana 3001:80 -n monitoring
 ```
 
-Ouvrir http://localhost:3001
-
-- **User** : `admin`
-- **Password** :
-
+URL: http://localhost:3001  
+User: `admin`  
+Password: 
 ```bash
 kubectl get secret monitoring-grafana -n monitoring \
   -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
 ```
 
-## 4. Dashboards à utiliser
+## 4. Dashboards disponibles
 
-Une fois connecté, aller dans **Dashboards → Browse**. Les dashboards suivants sont pré-installés :
+### Dashboards Kubernetes pré-installés
+- **Kubernetes / Compute Resources / Namespace (Pods)** - CPU & mémoire pods
+- **Kubernetes / Compute Resources / Pod** - Détails par pod
+- **Node Exporter / Nodes** - Ressources nœud
 
-| Dashboard | Ce qu'il montre |
-|---|---|
-| **Kubernetes / Compute Resources / Namespace (Pods)** | Vue d'ensemble CPU & mémoire de tous les pods du namespace `driftly` |
-| **Kubernetes / Compute Resources / Pod** | Détail CPU/mémoire par pod, utile pour comparer les replicas |
-| **Node Exporter / Nodes** | Ressources globales du noeud kind (CPU, RAM, disque) |
+### Dashboard Driftly applicatif (NEW)
 
-Filtrer par namespace `driftly` dans les sélecteurs en haut des dashboards.
+Importer depuis `monitoring/grafana-dashboards/driftly-dashboard.json`:
 
-## 5. Scénario de test de charge
+1. **Dashboards → New → Import**
+2. Upload JSON ou copy-paste le contenu
+3. Sélectionner Prometheus
+4. Importer
 
-### Étape 1 — Ouvrir 3 terminaux
+Affiche: Requêtes HTTP, latence, erreurs, itinéraires générés, appels OpenAI/Pexels, CPU, mémoire, uptime.
 
-**Terminal 1** — Port-forward de l'app :
+## 5. Vérifier les métriques Prometheus
 
+### Endpoint /api/metrics
+
+```bash
+# Localement
+curl http://localhost:3000/api/metrics
+
+# Production (avec port-forward)
+kubectl port-forward -n driftly svc/driftly-app 3000:3000
+curl http://localhost:3000/api/metrics
+```
+
+Doit retourner du texte Prometheus avec les métriques Driftly.
+
+### Prometheus UI
+
+```bash
+kubectl port-forward -n monitoring svc/prometheus-operated 9090:9090
+```
+
+URL: http://localhost:9090  
+Aller à **Status → Targets** pour vérifier que `driftly-app` est **UP**.
+
+## 6. Appliquer ServiceMonitor et PrometheusRules
+
+```bash
+# ServiceMonitor: permettre à Prometheus de scraper /api/metrics
+kubectl apply -f k8s/app-servicemonitor.yaml
+
+# PrometheusRules: alertes Prometheus
+kubectl apply -f k8s/prometheus-rules.yaml
+
+# Vérifier
+kubectl get servicemonitor -n driftly
+kubectl get prometheusrule -n driftly
+```
+
+## 7. Requêtes PromQL utiles
+
+```promql
+# Requêtes HTTP par seconde
+sum(rate(driftly_http_requests_total[5m])) by (status)
+
+# Taux erreurs (%)
+(sum(rate(driftly_http_requests_total{status=~"5.."}[5m])) / sum(rate(driftly_http_requests_total[5m]))) * 100
+
+# Latence p95
+histogram_quantile(0.95, sum(rate(driftly_http_request_duration_seconds_bucket[5m])) by (le))
+
+# Itinéraires générés
+sum(rate(driftly_itinerary_generated_total[5m])) by (status)
+
+# Erreurs OpenAI
+sum(rate(driftly_openai_requests_total{status="error"}[5m]))
+
+# Mémoire Heap (MB)
+nodejs_heap_size_used_bytes / 1024 / 1024
+
+# Uptime (jours)
+process_uptime_seconds / 86400
+```
+
+## 8. Alertes Prometheus
+
+Configurées dans `k8s/prometheus-rules.yaml`:
+
+| Alerte | Condition | Sévérité |
+|--------|-----------|----------|
+| **DriftlyHighErrorRate** | Erreurs 5xx > 5% (5min) | ⚠️ Warning |
+| **DriftlyHighLatency** | p95 latence > 2s (5min) | ⚠️ Warning |
+| **DriftlyItineraryGenerationErrors** | Erreurs génération > 0.1/s (5min) | ⚠️ Warning |
+| **DriftlyAppDown** | App indisponible (2min) | 🔴 Critical |
+| **DriftlyOpenAIErrors** | Erreurs OpenAI > 0.05/s (5min) | ⚠️ Warning |
+| **DriftlyPexelsErrors** | Erreurs Pexels > 0.1/s (5min) | ℹ️ Info |
+
+Voir les alertes: http://localhost:9090/alerts
+
+## 9. Scénario test de charge
+
+### Terminal 1: App
 ```bash
 kubectl port-forward -n driftly svc/driftly-app 3000:3000
 ```
 
-**Terminal 2** — Port-forward de Grafana :
-
+### Terminal 2: Grafana
 ```bash
 kubectl port-forward svc/monitoring-grafana 3001:80 -n monitoring
 ```
 
-**Terminal 3** — Lancer le test de charge.
-
-### Étape 2 — Générer la charge avec hey
-
+### Terminal 3: Générer charge
 ```bash
 brew install hey
-
-# 200 requêtes, 50 en parallèle, pendant 30 secondes
 hey -z 30s -c 50 http://localhost:3000/api/health
 ```
 
-Ou avec k6 :
-
+Ou k6:
 ```bash
 brew install k6
 k6 run --vus 50 --duration 30s - <<'EOF'
 import http from 'k6/http';
 import { check } from 'k6';
-
 export default function () {
   const res = http.get('http://localhost:3000/api/health');
   check(res, { 'status 200': (r) => r.status === 200 });
@@ -93,26 +164,28 @@ export default function () {
 EOF
 ```
 
-### Étape 3 — Observer dans Grafana
+### Observer
+- Dashboard: Driftly - Application Monitoring
+- Prometheus: http://localhost:9090/graph
+- HPA: `kubectl get hpa -n driftly -w`
+- Pods: `kubectl get pods -n driftly -w`
 
-1. Ouvrir le dashboard **Kubernetes / Compute Resources / Namespace (Pods)**
-2. Sélectionner le namespace `driftly`
-3. Observer la montée du CPU pendant le test
-4. Vérifier si le HPA déclenche un scaling :
+## 10. Limites actuelles
 
-```bash
-kubectl get hpa -n driftly -w
-kubectl get pods -n driftly -w
-```
+✅ Implémenté:
+- Requêtes HTTP (nombre, latence, statut)
+- Génération itinéraires (nombre, durée, erreurs)
+- Appels OpenAI/Pexels (nombre, erreurs)
+- Métriques Node.js (CPU, mémoire, uptime)
+- Alertes Prometheus
 
-### Étape 4 — Comparer avec kubectl
+❌ À faire:
+- Tracing distribué (OpenTelemetry)
+- Sentry
+- Alertes Slack/Email
+- Métriques Supabase
 
-```bash
-kubectl top pods -n driftly
-kubectl top nodes
-```
-
-## 6. Désinstaller
+## 11. Désinstaller
 
 ```bash
 helm uninstall monitoring -n monitoring

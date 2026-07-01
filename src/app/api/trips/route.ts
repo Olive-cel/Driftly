@@ -167,6 +167,55 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Appeler l'API Unsplash pour récupérer l'image de couverture
+    // C'est un appel asynchrone qui ne bloquera pas la réponse
+    const tripId = data.id;
+    (async () => {
+      try {
+        console.log(`[API] Fetching cover image for trip ${tripId}, destination: ${destination}`);
+        const unsplashResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/unsplash?destination=${encodeURIComponent(destination)}`
+        );
+
+        if (!unsplashResponse.ok) {
+          console.warn(
+            `[API] Unsplash API returned ${unsplashResponse.status} for ${destination}`
+          );
+          return;
+        }
+
+        const unsplashData = await unsplashResponse.json();
+        const coverImageUrl = unsplashData.imageUrl;
+
+        if (!coverImageUrl) {
+          console.warn(`[API] No cover image URL returned for ${destination}`);
+          return;
+        }
+
+        // Mettre à jour le voyage avec l'image de couverture
+        const { error: updateError } = await supabase
+          .from("trips")
+          .update({ cover_image: coverImageUrl })
+          .eq("id", tripId);
+
+        if (updateError) {
+          console.error(
+            `[API] Failed to update cover_image for trip ${tripId}:`,
+            updateError
+          );
+        } else {
+          console.log(
+            `[API] Successfully updated cover_image for trip ${tripId}`
+          );
+        }
+      } catch (err) {
+        console.error(
+          `[API] Error fetching/updating cover image for trip ${tripId}:`,
+          err
+        );
+      }
+    })();
+
     return NextResponse.json({ trip: data }, { status: 201 });
   } catch (err) {
     console.error("[API] POST /api/trips unexpected error:", err);

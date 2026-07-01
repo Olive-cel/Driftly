@@ -2,16 +2,11 @@
  * Personalized Travel Recommendations
  * Generates destination recommendations based on user profile and travel history
  * 
- * TODO: This can be enhanced with:
- * - Machine learning algorithms
- * - User behavioral data
- * - Weather patterns
- * - Travel trends
- * - Dynamic pricing integration
+ * NOTE: imageUrl est maintenant géré dynamiquement via l'API Unsplash.
+ * Les valeurs ici servent de fallback.
  */
 
 import type { Database } from "@/types/database";
-import { getDestinationImageSmall } from "./destination-images";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"] | null;
 type Trip = Database["public"]["Tables"]["trips"]["Row"];
@@ -33,7 +28,7 @@ const recommendationDatabase: Record<string, Recommendation> = {
     country: "Indonésie",
     priceFrom: 890,
     reason: "Plages paradisiaques et temples ancestraux",
-    imageUrl: getDestinationImageSmall("Bali"),
+    imageUrl: "", // Sera chargé via Unsplash
     tags: ["Plage", "Relaxation", "Culture"],
     rating: 4.8,
     travelStyle: "relaxation",
@@ -43,7 +38,7 @@ const recommendationDatabase: Record<string, Recommendation> = {
     country: "Grèce",
     priceFrom: 1200,
     reason: "Couchers de soleil spectaculaires",
-    imageUrl: getDestinationImageSmall("Santorin"),
+    imageUrl: "", // Sera chargé via Unsplash
     tags: ["Plage", "Romance", "Luxe"],
     rating: 4.9,
     travelStyle: "relaxation",
@@ -53,7 +48,7 @@ const recommendationDatabase: Record<string, Recommendation> = {
     country: "Tanzanie",
     priceFrom: 750,
     reason: "Îles tropicales avec culture swahili",
-    imageUrl: "https://source.unsplash.com/400x300/?zanzibar,beach",
+    imageUrl: "", // Sera chargé via Unsplash
     tags: ["Plage", "Aventure", "Culturel"],
     rating: 4.7,
     travelStyle: "relaxation",
@@ -63,7 +58,7 @@ const recommendationDatabase: Record<string, Recommendation> = {
     country: "Seychelles",
     priceFrom: 2500,
     reason: "Îles privées et récifs de classe mondiale",
-    imageUrl: "https://source.unsplash.com/400x300/?seychelles",
+    imageUrl: "", // Sera chargé via Unsplash
     tags: ["Luxe", "Plage", "Lune de miel"],
     rating: 4.9,
     travelStyle: "relaxation",
@@ -73,7 +68,7 @@ const recommendationDatabase: Record<string, Recommendation> = {
     country: "Portugal",
     priceFrom: 650,
     reason: "Capitale historique avec ambiance bohème",
-    imageUrl: getDestinationImageSmall("Lisbonne"),
+    imageUrl: "", // Sera chargé via Unsplash
     tags: ["Ville", "Culture", "Gastronomie"],
     rating: 4.7,
     travelStyle: "city_trip",
@@ -83,7 +78,7 @@ const recommendationDatabase: Record<string, Recommendation> = {
     country: "République Tchèque",
     priceFrom: 600,
     reason: "Architecture gothique et vie nocturne",
-    imageUrl: getDestinationImageSmall("Prague"),
+    imageUrl: "", // Sera chargé via Unsplash
     tags: ["Ville", "Histoire", "Vie nocturne"],
     rating: 4.8,
     travelStyle: "city_trip",
@@ -93,7 +88,7 @@ const recommendationDatabase: Record<string, Recommendation> = {
     country: "Pays-Bas",
     priceFrom: 800,
     reason: "Canaux pittoresques et musées renommés",
-    imageUrl: getDestinationImageSmall("Amsterdam"),
+    imageUrl: "", // Sera chargé via Unsplash
     tags: ["Ville", "Culture", "Vélo"],
     rating: 4.7,
     travelStyle: "city_trip",
@@ -103,7 +98,7 @@ const recommendationDatabase: Record<string, Recommendation> = {
     country: "Italie",
     priceFrom: 900,
     reason: "La Ville Éternelle pleine de charme",
-    imageUrl: getDestinationImageSmall("Rome"),
+    imageUrl: "", // Sera chargé via Unsplash
     tags: ["Ville", "Histoire", "Gastronomie"],
     rating: 4.8,
     travelStyle: "city_trip",
@@ -113,7 +108,7 @@ const recommendationDatabase: Record<string, Recommendation> = {
     country: "Islande",
     priceFrom: 1500,
     reason: "Glaciers, geysers et aurores boréales",
-    imageUrl: "https://source.unsplash.com/400x300/?iceland,waterfall",
+    imageUrl: "", // Sera chargé via Unsplash
     tags: ["Nature", "Aventure", "Photographie"],
     rating: 4.9,
     travelStyle: "aventure",
@@ -123,7 +118,7 @@ const recommendationDatabase: Record<string, Recommendation> = {
     country: "Costa Rica",
     priceFrom: 1200,
     reason: "Forêts tropicales et biodiversité",
-    imageUrl: "https://source.unsplash.com/400x300/?costarica,jungle",
+    imageUrl: "", // Sera chargé via Unsplash
     tags: ["Aventure", "Nature", "Animaux"],
     rating: 4.8,
     travelStyle: "aventure",
@@ -133,7 +128,7 @@ const recommendationDatabase: Record<string, Recommendation> = {
     country: "Pérou",
     priceFrom: 1100,
     reason: "Machu Picchu et culture inca",
-    imageUrl: "https://source.unsplash.com/400x300/?peru,mountain",
+    imageUrl: "", // Sera chargé via Unsplash
     tags: ["Aventure", "Histoire", "Randonnée"],
     rating: 4.7,
     travelStyle: "aventure",
@@ -143,7 +138,7 @@ const recommendationDatabase: Record<string, Recommendation> = {
     country: "Maroc",
     priceFrom: 700,
     reason: "Déserts, medinas et montagnes de l'Atlas",
-    imageUrl: getDestinationImageSmall("Marrakech"),
+    imageUrl: "", // Sera chargé via Unsplash
     tags: ["Aventure", "Culturel", "Budget"],
     rating: 4.6,
     travelStyle: "aventure",
@@ -153,7 +148,7 @@ const recommendationDatabase: Record<string, Recommendation> = {
     country: "Japon",
     priceFrom: 1800,
     reason: "Fusion de tradition et modernité",
-    imageUrl: getDestinationImageSmall("Tokyo"),
+    imageUrl: "", // Sera chargé via Unsplash
     tags: ["Gastronomie", "Ville", "Technologie"],
     rating: 4.8,
     travelStyle: "gastronomie",
@@ -163,7 +158,7 @@ const recommendationDatabase: Record<string, Recommendation> = {
     country: "France",
     priceFrom: 850,
     reason: "Capitale mondiale de la gastronomie",
-    imageUrl: "https://source.unsplash.com/400x300/?lyon,restaurant",
+    imageUrl: "", // Sera chargé via Unsplash
     tags: ["Gastronomie", "Ville", "Vin"],
     rating: 4.7,
     travelStyle: "gastronomie",
@@ -173,7 +168,7 @@ const recommendationDatabase: Record<string, Recommendation> = {
     country: "Espagne",
     priceFrom: 850,
     reason: "Architecture unique de Gaudí et plages",
-    imageUrl: getDestinationImageSmall("Barcelone"),
+    imageUrl: "", // Sera chargé via Unsplash
     tags: ["Gastronomie", "Plage", "Architecture"],
     rating: 4.7,
     travelStyle: "gastronomie",
@@ -183,7 +178,7 @@ const recommendationDatabase: Record<string, Recommendation> = {
     country: "Maldives",
     priceFrom: 3500,
     reason: "Bungalows sur l'eau et plongée",
-    imageUrl: "https://source.unsplash.com/400x300/?maldives,resort",
+    imageUrl: "", // Sera chargé via Unsplash
     tags: ["Luxe", "Plongée", "Lune de miel"],
     rating: 4.9,
   },
@@ -192,7 +187,7 @@ const recommendationDatabase: Record<string, Recommendation> = {
     country: "Japon",
     priceFrom: 2200,
     reason: "Culture, temples et paysages",
-    imageUrl: getDestinationImageSmall("Tokyo"),
+    imageUrl: "", // Sera chargé via Unsplash
     tags: ["Culturel", "Luxe", "Gastronomie"],
     rating: 4.8,
   },
@@ -201,7 +196,7 @@ const recommendationDatabase: Record<string, Recommendation> = {
     country: "Polynésie française",
     priceFrom: 2600,
     reason: "Lagons cristallins et îles privées",
-    imageUrl: "https://source.unsplash.com/400x300/?borabora",
+    imageUrl: "", // Sera chargé via Unsplash
     tags: ["Luxe", "Plage", "Lune de miel"],
     rating: 4.9,
   },
@@ -244,7 +239,6 @@ export function getPersonalizedRecommendations(
 
   // Add recommendations based on interests
   if (profile?.interests && Array.isArray(profile.interests)) {
-    const interests = profile.interests as string[];
     // You can add more sophisticated matching here
     // For now, just mark recommendations with relevant tags
   }
@@ -269,8 +263,34 @@ export function getRecommendation(destination: string): Recommendation | undefin
 }
 
 /**
- * Get all available recommendations (for admin/reference)
+ * Get all available recommendations (for admin/reference and fallbacks)
  */
 export function getAllRecommendations(): Recommendation[] {
   return Object.values(recommendationDatabase);
+}
+
+/**
+ * Enrichir les recommendations avec les images Unsplash
+ * À appeler côté client dans un useEffect
+ */
+export async function enrichRecommendationsWithImages(
+  recommendations: Recommendation[]
+): Promise<Recommendation[]> {
+  const enriched = await Promise.all(
+    recommendations.map(async (rec) => {
+      try {
+        const response = await fetch(
+          `/api/images/search?query=${encodeURIComponent(rec.destination)}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          return { ...rec, imageUrl: data.imageUrl || "" };
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch image for ${rec.destination}:`, error);
+      }
+      return rec;
+    })
+  );
+  return enriched;
 }

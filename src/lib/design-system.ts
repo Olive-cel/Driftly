@@ -1,51 +1,52 @@
 // ═══════════════════════════════════════════════════════════════════════
-// Design System - Premium UI Tokens & Classes
+// Design System - Premium Warm Identity
 // ═══════════════════════════════════════════════════════════════════════
 
-// ── Couleurs ────────────────────────────────────────────────────────────
+// ── Palette Chaude & Premium ────────────────────────────────────────
 export const colors = {
   primary: {
-    50: "#eff6ff",
-    100: "#dbeafe",
-    200: "#bfdbfe",
-    300: "#93c5fd",
-    400: "#60a5fa",
-    500: "#3b82f6",
-    600: "#2563eb",
-    700: "#1d4ed8",
-    800: "#1e40af",
-    900: "#1e3a8a",
+    terracotta: "#E76F51",
+    terracottaLight: "#F5B4A0",
+    terracottaDark: "#D15D3B",
+  },
+  secondary: {
+    sand: "#F4A261",
+    sandLight: "#F8C799",
+    sandDark: "#E89247",
   },
   accent: {
-    50: "#f3e8ff",
-    100: "#e9d5ff",
-    200: "#d8b4fe",
-    300: "#c084fc",
-    400: "#a855f7",
-    500: "#9333ea",
-    600: "#7e22ce",
-    700: "#6b21a8",
-    800: "#581c87",
-    900: "#3f0f5c",
+    purple: "#5E548E",
+    purpleLight: "#9B95C9",
+    purpleDark: "#3D3456",
   },
+  background: {
+    ivory: "#FFF8F0",
+    white: "#FFFFFF",
+    light: "#FFFAF5",
+  },
+  text: {
+    dark: "#1F2937",
+    muted: "#6B7280",
+    light: "#9CA3AF",
+  },
+  success: "#84A98C",
+  warning: "#F4A261",
+  error: "#E76F51",
   neutral: {
-    50: "#fafafa",
-    100: "#f5f5f5",
-    200: "#e5e5e5",
-    300: "#d4d4d4",
-    400: "#a3a3a3",
-    500: "#737373",
-    600: "#525252",
-    700: "#404040",
-    800: "#262626",
-    900: "#171717",
+    50: "#FAFAF9",
+    100: "#F5F5F4",
+    200: "#E7E5E4",
+    300: "#D6D3D1",
+    400: "#A8A29E",
+    500: "#78716B",
+    600: "#57534E",
+    700: "#44403C",
+    800: "#292524",
+    900: "#1C1917",
   },
-  success: "#10b981",
-  warning: "#f59e0b",
-  error: "#ef4444",
 };
 
-// ── Espacements ─────────────────────────────────────────────────────────
+// ── Espacements ─────────────────────────────────────────────────────
 export const spacing = {
   xs: "0.75rem",
   sm: "1rem",
@@ -56,39 +57,41 @@ export const spacing = {
   "3xl": "6rem",
 };
 
-// ── Ombres Premium ──────────────────────────────────────────────────────
+// ── Ombres Douces & Premium ──────────────────────────────────────
 export const shadows = {
   xs: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-  sm: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)",
-  md: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
-  lg: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)",
-  xl: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-  premium: "0 20px 40px -10px rgba(0, 0, 0, 0.15)",
+  sm: "0 1px 3px 0 rgba(231, 111, 81, 0.08), 0 1px 2px -1px rgba(231, 111, 81, 0.04)",
+  md: "0 4px 6px -1px rgba(231, 111, 81, 0.1), 0 2px 4px -2px rgba(231, 111, 81, 0.05)",
+  lg: "0 10px 15px -3px rgba(231, 111, 81, 0.1), 0 4px 6px -4px rgba(231, 111, 81, 0.05)",
+  xl: "0 20px 25px -5px rgba(231, 111, 81, 0.1), 0 8px 10px -6px rgba(231, 111, 81, 0.05)",
+  premium: "0 20px 40px -10px rgba(231, 111, 81, 0.15)",
 };
 
-// ── Coins Arrondis ─────────────────────────────────────────────────────
+// ── Coins Arrondis Premium ──────────────────────────────────────
 export const radius = {
-  sm: "0.375rem", // 6px
-  md: "0.5rem",   // 8px
-  lg: "1rem",     // 16px
-  xl: "1.5rem",   // 24px
+  sm: "0.375rem",   // 6px
+  md: "0.5rem",     // 8px
+  lg: "1rem",       // 16px
+  xl: "1.5rem",     // 24px
+  "2xl": "2rem",    // 32px
   full: "9999px",
 };
 
-// ── Classes Tailwind Réutilisables ─────────────────────────────────────
+// ── Classes Tailwind Réutilisables ─────────────────────────────────
 
 // Cartes premium
 export const card = {
-  base: "bg-white rounded-xl border border-neutral-200/50 shadow-md hover:shadow-lg transition-shadow duration-300",
-  premium: "bg-white/80 backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300",
+  base: "bg-white rounded-2xl border border-neutral-100 shadow-sm hover:shadow-md transition-shadow duration-300",
+  premium: "bg-white/95 backdrop-blur-sm rounded-2xl border border-neutral-100/50 shadow-md hover:shadow-lg transition-all duration-300",
   glass: "bg-white/40 backdrop-blur-lg rounded-2xl border border-white/30 shadow-md",
 };
 
 // Boutons premium
 export const button = {
-  primary: "inline-flex items-center justify-center px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-medium hover:shadow-lg transition-all duration-300 hover:scale-105 active:scale-95",
+  primary: "inline-flex items-center justify-center px-6 py-2.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-lg font-medium hover:shadow-lg transition-all duration-300 hover:scale-105 active:scale-95",
   secondary: "inline-flex items-center justify-center px-6 py-2.5 bg-white border border-neutral-300 text-neutral-900 rounded-lg font-medium hover:bg-neutral-50 transition-all duration-300",
   ghost: "inline-flex items-center justify-center px-6 py-2.5 text-neutral-700 font-medium hover:bg-neutral-100 rounded-lg transition-all duration-200",
+  accent: "inline-flex items-center justify-center px-6 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white rounded-lg font-medium hover:shadow-lg transition-all duration-300",
 };
 
 // Texte premium
@@ -108,7 +111,7 @@ export const layout = {
   gutter: "gap-6 md:gap-8 lg:gap-10",
 };
 
-// ── Animations ──────────────────────────────────────────────────────────
+// ── Animations ──────────────────────────────────────────────────────
 export const animations = {
   fadeIn: {
     initial: { opacity: 0 },
@@ -144,10 +147,11 @@ export const animations = {
   },
 };
 
-// ── Gradients ───────────────────────────────────────────────────────────
+// ── Gradients Chauds & Premium ──────────────────────────────────────
 export const gradients = {
-  blueToViolet: "bg-gradient-to-br from-blue-600 to-purple-600",
-  blueToTeal: "bg-gradient-to-br from-blue-500 to-teal-500",
-  violetToIndigo: "bg-gradient-to-br from-purple-600 to-indigo-600",
-  warmSunset: "bg-gradient-to-br from-orange-400 via-pink-500 to-purple-600",
+  terracottaToPurple: "bg-gradient-to-br from-orange-600 to-purple-600",
+  sandToTerracotta: "bg-gradient-to-br from-amber-500 via-orange-500 to-orange-600",
+  warmSunset: "bg-gradient-to-br from-amber-400 via-orange-500 to-red-600",
+  softWarmth: "bg-gradient-to-br from-amber-50 to-orange-100",
+  purpleAccent: "bg-gradient-to-br from-purple-600 to-purple-700",
 };

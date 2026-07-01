@@ -134,7 +134,7 @@ export default function NewTripPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-50">
+    <main className="min-h-screen bg-gradient-to-b from-amber-50 via-white to-amber-50">
       {/* Header */}
       <div className="border-b bg-white/80 backdrop-blur-sm">
         <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6 lg:px-8">
@@ -382,7 +382,7 @@ export default function NewTripPage() {
                 type="submit"
                 disabled={loading}
                 size="lg"
-                className="flex-1 bg-blue-600 py-6 text-base font-semibold hover:bg-blue-700"
+                className="flex-1 bg-gradient-to-r from-amber-600 to-orange-600 py-6 text-base font-semibold hover:from-amber-700 hover:to-orange-700"
               >
                 {loading ? (
                   <>

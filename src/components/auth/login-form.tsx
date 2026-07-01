@@ -50,14 +50,25 @@ export function LoginForm() {
 
       <div className="grid gap-2">
         <Label htmlFor="password">Mot de passe</Label>
-        <Input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          autoComplete="current-password"
-        />
+        <div className="flex justify-between items-center gap-2">
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+            className="flex-1"
+          />
+        </div>
+        <div className="text-right">
+          <Link
+            href="/forgot-password"
+            className="text-xs text-primary hover:underline underline-offset-4"
+          >
+            Mot de passe oublié ?
+          </Link>
+        </div>
       </div>
 
       {error && (

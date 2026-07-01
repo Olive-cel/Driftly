@@ -58,7 +58,7 @@ export function Sidebar({ user }: SidebarProps) {
       {/* Logo */}
       <div className="border-b border-gray-100 p-6">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <Plane className="h-6 w-6 text-blue-600" />
+          <Plane className="h-6 w-6 text-amber-600" />
           <span className="text-xl font-bold text-gray-900">Driftly</span>
         </Link>
       </div>
@@ -75,7 +75,7 @@ export function Sidebar({ user }: SidebarProps) {
               href={item.href}
               className={`flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? "bg-blue-50 text-blue-600"
+                  ? "bg-amber-50 text-amber-600"
                   : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
               }`}
             >
@@ -87,9 +87,9 @@ export function Sidebar({ user }: SidebarProps) {
       </nav>
 
       {/* Inspiration Block */}
-      <div className="mx-3 mb-6 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 p-4 border border-blue-100">
+      <div className="mx-3 mb-6 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 p-4 border border-amber-100">
         <div className="mb-2 flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-blue-600" />
+          <Sparkles className="h-5 w-5 text-amber-600" />
           <p className="font-semibold text-gray-900 text-sm">Besoin d&apos;inspiration ?</p>
         </div>
         <p className="text-xs text-gray-600 mb-3">
@@ -98,7 +98,7 @@ export function Sidebar({ user }: SidebarProps) {
         <Link href="/dashboard/trips/new">
           <Button
             size="sm"
-            className="w-full bg-blue-600 text-white hover:bg-blue-700"
+            className="w-full bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:from-amber-700 hover:to-orange-700"
           >
             Commencer
           </Button>
@@ -112,7 +112,7 @@ export function Sidebar({ user }: SidebarProps) {
       <div className="space-y-4 p-4">
         <div className="rounded-xl bg-gray-50 p-3 border border-gray-100">
           <div className="mb-1 flex items-center gap-2">
-            <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm">
+            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-semibold text-sm">
               {userName.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">

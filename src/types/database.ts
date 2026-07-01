@@ -52,6 +52,7 @@ export interface Database {
           budget: number | null;
           travel_style: string | null;
           interests: Json;
+          cover_image: string | null;
           status: TripStatus;
           created_at: string;
           updated_at: string;
@@ -68,6 +69,7 @@ export interface Database {
           budget?: number | null;
           travel_style?: string | null;
           interests?: Json;
+          cover_image?: string | null;
           status?: TripStatus;
         };
         Update: {
@@ -80,6 +82,7 @@ export interface Database {
           budget?: number | null;
           travel_style?: string | null;
           interests?: Json;
+          cover_image?: string | null;
           status?: TripStatus;
         };
         Relationships: [];

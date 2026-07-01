@@ -7,6 +7,16 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import type { Database } from "@/types/database";
 import type { GeneratedItinerary } from "@/types/itinerary";
+import type { NormalizedFlightOffer } from "@/lib/amadeus";
+import { FALLBACK_IMAGE_URL } from "@/lib/pexels-client";
+import { getFormattedCountryInfo } from "@/lib/travel/country-info";
+import { getActivityImage, getActivityFallbackImage } from "@/lib/travel/activity-images";
+import {
+  calculateDailyBudget,
+  calculateBudgetBreakdown,
+  extractBudgetFromItinerary,
+  type BudgetBreakdown,
+} from "@/lib/travel/budget-calculator";
 import {
   Heart,
   MoreVertical,
@@ -17,12 +27,15 @@ import {
   AlertCircle,
   Share2,
   Download,
+  Plane,
+  Trophy,
 } from "lucide-react";
 
 type Trip = Database["public"]["Tables"]["trips"]["Row"];
 
 const tabsData = [
   { id: "overview", label: "Aperçu" },
+  { id: "flights", label: "Vols recommandés" },
   { id: "itinerary", label: "Itinéraire" },
   { id: "map", label: "Carte" },
   { id: "budget", label: "Budget" },
@@ -30,12 +43,27 @@ const tabsData = [
   { id: "documents", label: "Documents" },
 ];
 
-const dayImages = [
-  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop",
-  "https://images.unsplash.com/photo-1552182158-f640e07731a5?w=600&h=400&fit=crop",
-];
+/**
+ * Calcule la date du jour basée sur start_date du voyage.
+ */
+function calculateDayDate(trip: Trip | null, dayNumber: number): string {
+  if (!trip?.start_date) return `Jour ${dayNumber}`;
+
+  try {
+    const startDate = new Date(trip.start_date);
+    const dayDate = new Date(startDate);
+    dayDate.setDate(dayDate.getDate() + (dayNumber - 1));
+
+    const formatter = new Intl.DateTimeFormat("fr-FR", {
+      day: "numeric",
+      month: "long",
+    });
+
+    return `Jour ${dayNumber} — ${formatter.format(dayDate)}`;
+  } catch {
+    return `Jour ${dayNumber}`;
+  }
+}
 
 export default function TripDetailPremium() {
   const router = useRouter();
@@ -48,6 +76,12 @@ export default function TripDetailPremium() {
   const [error, setError] = useState<string | null>(null);
   const [liked, setLiked] = useState(false);
   const [activeTab, setActiveTab] = useState("itinerary");
+  const [dayImages, setDayImages] = useState<Record<number, string>>({}); // Stocker images par jour
+  const [countryInfo, setCountryInfo] = useState<Record<string, string>>({}); // Stocker infos pays
+  const [budgetBreakdown, setBudgetBreakdown] = useState<BudgetBreakdown | null>(null); // Budget récapitulatif
+  const [dailyBudgets, setDailyBudgets] = useState<Record<number, number>>({}); // Budgets par jour
+  const [flights, setFlights] = useState<NormalizedFlightOffer[]>([]); // Vols recommandés
+  const [flightsLoading, setFlightsLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,6 +99,12 @@ export default function TripDetailPremium() {
         const tripData = await tripResponse.json();
         setTrip(tripData.trip);
 
+        // Charger infos pratiques du pays
+        if (tripData.trip?.destination) {
+          const countryInfoData = getFormattedCountryInfo(tripData.trip.destination);
+          setCountryInfo(countryInfoData);
+        }
+
         // Fetch itinerary
         const itinResponse = await fetch(`/api/itineraries?trip_id=${tripId}`);
         if (itinResponse.ok) {
@@ -80,6 +120,23 @@ export default function TripDetailPremium() {
             }
             if (content && typeof content === "object" && "days" in content) {
               setItinerary(content);
+
+              // Extraire les budgets depuis l'itinéraire IA
+              const budgetData = extractBudgetFromItinerary(content);
+              console.log("[Trip Detail] Budget data from IA:", budgetData);
+
+              // Calculer la répartition du budget
+              const breakdown = calculateBudgetBreakdown(
+                tripData.trip?.budget,
+                budgetData.totalBudgetBreakdown
+              );
+              setBudgetBreakdown(breakdown);
+              console.log("[Trip Detail] Budget breakdown:", breakdown);
+
+              // Stocker les budgets quotidiens
+              if (budgetData.dailyBudgets) {
+                setDailyBudgets(budgetData.dailyBudgets);
+              }
             }
           }
         }
@@ -90,14 +147,61 @@ export default function TripDetailPremium() {
       }
     };
 
+    // Charger les vols recommandés
+    const fetchFlights = async () => {
+      if (!tripId) return;
+      try {
+        setFlightsLoading(true);
+        const flightsResponse = await fetch(`/api/trips/${tripId}/travel-options`);
+        if (flightsResponse.ok) {
+          const flightsData = await flightsResponse.json();
+          if (flightsData.flights && Array.isArray(flightsData.flights)) {
+            setFlights(flightsData.flights);
+            console.log("[Trip Detail] Flights loaded:", flightsData.flights.length);
+          }
+        }
+      } catch (err) {
+        console.warn("[Trip Detail] Failed to load flights:", err);
+      } finally {
+        setFlightsLoading(false);
+      }
+    };
+
     fetchData();
+    fetchFlights();
   }, [tripId, router]);
+
+  // Charger les images pour chaque jour
+  useEffect(() => {
+    if (itinerary && itinerary.days && trip?.destination) {
+      const loadDayImages = async () => {
+        const images: Record<number, string> = {};
+        for (const day of itinerary.days) {
+          try {
+            const firstActivity = day.activities?.[0];
+            const img = await getActivityImage(
+              trip.destination || "voyage",
+              day.title,
+              firstActivity?.description
+            );
+            images[day.day] = img?.imageUrl || getActivityFallbackImage(firstActivity?.category || "travel");
+          } catch (err) {
+            console.warn(`Failed to load image for day ${day.day}:`, err);
+            images[day.day] = getActivityFallbackImage("travel");
+          }
+        }
+        setDayImages(images);
+      };
+
+      loadDayImages();
+    }
+  }, [itinerary, trip?.destination]);
 
   if (loading) {
     return (
       <div className="ml-64 flex min-h-screen items-center justify-center bg-white">
         <div className="animate-spin">
-          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full" />
+          <div className="w-12 h-12 border-4 border-amber-200 border-t-amber-600 rounded-full" />
         </div>
       </div>
     );
@@ -117,13 +221,13 @@ export default function TripDetailPremium() {
     );
   }
 
-  const heroImage = "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1400&h=600&fit=crop";
+  const heroImage = trip.cover_image || FALLBACK_IMAGE_URL;
 
   return (
     <motion.div className="ml-64 min-h-screen bg-white" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       {/* Hero Section */}
       <motion.div className="relative h-80 w-full overflow-hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-        <img src={heroImage} alt={trip.destination ?? "Voyage"} className="w-full h-full object-cover" />
+        <img src={heroImage} alt={trip.destination ?? "Voyage"} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = FALLBACK_IMAGE_URL; }} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
         {/* Top Actions */}
@@ -151,7 +255,7 @@ export default function TripDetailPremium() {
         {/* Hero Content */}
         <div className="absolute bottom-0 left-0 right-0 px-8 py-8 space-y-4">
           <div>
-            <div className="inline-block px-3 py-1 bg-blue-500/80 backdrop-blur-sm rounded-full text-white text-xs font-semibold mb-3">
+            <div className="inline-block px-3 py-1 bg-amber-600/80 backdrop-blur-sm rounded-full text-white text-xs font-semibold mb-3">
               ✨ Confirmé
             </div>
             <h1 className="text-5xl font-bold text-white mb-3">
@@ -196,7 +300,7 @@ export default function TripDetailPremium() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`py-4 font-medium text-sm whitespace-nowrap transition-all border-b-2 ${
                   activeTab === tab.id
-                    ? "text-blue-600 border-blue-600"
+                    ? "text-amber-600 border-amber-600"
                     : "text-neutral-600 border-transparent hover:text-neutral-900"
                 }`}
                 whileHover={{ scale: 1.05 }}
@@ -213,6 +317,134 @@ export default function TripDetailPremium() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Left Column - Itinerary */}
           <div className="lg:col-span-2">
+            {activeTab === "flights" && (
+              <div className="space-y-6">
+                {flightsLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin">
+                      <div className="w-8 h-8 border-4 border-amber-200 border-t-amber-600 rounded-full" />
+                    </div>
+                  </div>
+                ) : flights.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Plane className="w-12 h-12 text-amber-200 mx-auto mb-4" />
+                    <p className="text-neutral-600">Aucun vol trouvé. Essayez de rechercher à nouveau.</p>
+                    <motion.button
+                      onClick={() => {
+                        setFlightsLoading(true);
+                        fetch(`/api/trips/${tripId}/travel-options`, { method: "POST" })
+                          .then((r) => r.json())
+                          .then((data) => {
+                            if (data.flights) setFlights(data.flights);
+                          })
+                          .finally(() => setFlightsLoading(false));
+                      }}
+                      className="mt-6 px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Rechercher les vols
+                    </motion.button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h2 className="text-2xl font-bold text-neutral-900">Vols recommandés</h2>
+                        <p className="text-neutral-600 text-sm">
+                          {flights.length} vol(s) trouvé(s) de {trip?.departure_city} à {trip?.destination}
+                        </p>
+                      </div>
+                      <Plane className="w-8 h-8 text-amber-600" />
+                    </div>
+
+                    {flights.map((flight, idx) => {
+                      const minPrice = Math.min(...flights.map((f) => f.price));
+                      const isCheapest = flight.price === minPrice;
+                      return (
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.1 }}
+                          className="bg-white border border-neutral-200 rounded-lg p-6 hover:shadow-md transition-shadow relative"
+                        >
+                          {isCheapest && (
+                            <div className="absolute -top-3 -right-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 shadow-md">
+                              <Trophy className="w-3 h-3" />
+                              Meilleur prix
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-center">
+                            {/* Airline */}
+                            <div className="text-center md:text-left">
+                              <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Compagnie</p>
+                              <p className="font-semibold text-neutral-900">{flight.airline}</p>
+                            </div>
+
+                            {/* Departure */}
+                            <div className="text-center">
+                              <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Départ</p>
+                              <div>
+                                <p className="font-bold text-lg text-neutral-900">
+                                  {new Date(flight.departure_time).toLocaleTimeString("fr-FR", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </p>
+                                <p className="text-sm text-neutral-600">{flight.departure_airport}</p>
+                              </div>
+                            </div>
+
+                            {/* Duration & Stops */}
+                            <div className="text-center">
+                              <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Durée</p>
+                              <div className="flex flex-col items-center">
+                                <p className="font-semibold text-neutral-900">{flight.duration}</p>
+                                <p className="text-xs text-neutral-600 mt-1">
+                                  {flight.stops === 0 ? "Direct" : `${flight.stops} escale${flight.stops > 1 ? "s" : ""}`}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Arrival */}
+                            <div className="text-center">
+                              <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Arrivée</p>
+                              <div>
+                                <p className="font-bold text-lg text-neutral-900">
+                                  {new Date(flight.arrival_time).toLocaleTimeString("fr-FR", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </p>
+                                <p className="text-sm text-neutral-600">{flight.arrival_airport}</p>
+                              </div>
+                            </div>
+
+                            {/* Price & Action */}
+                            <div className="text-center md:text-right">
+                              <p className="text-xs text-neutral-500 uppercase tracking-wide mb-2">Prix</p>
+                              <div>
+                                <p className="text-2xl font-bold text-amber-600">{flight.price}€</p>
+                                <p className="text-xs text-neutral-600 mt-2">par personne</p>
+                              </div>
+                              <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                className="mt-3 px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 text-white text-sm font-semibold rounded-lg hover:shadow-md transition-all w-full md:w-auto"
+                              >
+                                Réserver
+                              </motion.button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
             {activeTab === "itinerary" && itinerary && itinerary.days ? (
               <div className="space-y-8">
                 {itinerary.days.map((day, index) => (
@@ -226,9 +458,12 @@ export default function TripDetailPremium() {
                     {/* Day Header with Image */}
                     <div className="relative h-48 rounded-xl overflow-hidden shadow-md">
                       <img
-                        src={dayImages[index % dayImages.length]}
+                        src={dayImages[day.day] || FALLBACK_IMAGE_URL}
                         alt={day.title}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = FALLBACK_IMAGE_URL;
+                        }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                       <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
@@ -237,8 +472,8 @@ export default function TripDetailPremium() {
                     </div>
 
                     {/* Day Number */}
-                    <div className="text-lg font-bold text-blue-600 mt-4">
-                      Jour {day.day} — {day.day === 1 ? "38 jui" : day.day === 2 ? "29 jui" : day.day === 3 ? "30 jui" : "1 jui"}
+                    <div className="text-lg font-bold text-amber-600 mt-4">
+                      {calculateDayDate(trip, day.day)}
                     </div>
 
                     {/* Activities */}
@@ -278,9 +513,28 @@ export default function TripDetailPremium() {
                     )}
 
                     {/* Budget Estimate */}
-                    <div className="bg-blue-50 border border-blue-200/30 rounded-lg p-3">
-                      <p className="text-sm text-blue-900 font-semibold">Budget estimé: 120 €</p>
-                    </div>
+                    {trip && (
+                      <div className="bg-amber-50 border border-amber-200/30 rounded-lg p-3">
+                        <p className="text-sm text-amber-900 font-semibold">
+                          Budget estimé:{" "}
+                          {dailyBudgets[day.day]
+                            ? `${Math.round(dailyBudgets[day.day])}€`
+                            : calculateDailyBudget(
+                                trip.budget,
+                                trip.duration,
+                                day.activities?.[0]?.estimatedCost,
+                                day.day
+                              ).estimatedBudget > 0
+                            ? `${calculateDailyBudget(
+                                trip.budget,
+                                trip.duration,
+                                day.activities?.[0]?.estimatedCost,
+                                day.day
+                              ).estimatedBudget}€`
+                            : "Non disponible"}
+                        </p>
+                      </div>
+                    )}
 
                     {/* Tips */}
                     {day.tips && day.tips.length > 0 && (
@@ -298,7 +552,7 @@ export default function TripDetailPremium() {
               </div>
             ) : (
               <div className="text-center py-12">
-                <Lightbulb className="w-12 h-12 text-blue-200 mx-auto mb-4" />
+                <Lightbulb className="w-12 h-12 text-amber-200 mx-auto mb-4" />
                 <p className="text-neutral-600">L&apos;itinéraire est en cours de génération...</p>
               </div>
             )}
@@ -307,40 +561,40 @@ export default function TripDetailPremium() {
           {/* Right Column */}
           <div className="space-y-6">
             {/* Map */}
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-6 h-64 border border-blue-200/30 flex items-center justify-center">
+            <div className="bg-gradient-to-br from-amber-50 to-purple-50 rounded-lg p-6 h-64 border border-amber-200/30 flex items-center justify-center">
               <div className="text-center">
-                <MapPin className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-                <p className="text-sm text-blue-600">Voir la carte complète</p>
+                <MapPin className="w-8 h-8 text-amber-400 mx-auto mb-2" />
+                <p className="text-sm text-amber-600">Voir la carte complète</p>
               </div>
             </div>
 
             {/* Practical Info */}
-            <div className="bg-white border border-neutral-200/50 rounded-lg p-6 space-y-4">
+            <div className="bg-white border border-neutral-100 rounded-lg p-6 space-y-4">
               <h3 className="font-semibold text-neutral-900">Informations pratiques</h3>
               <div className="space-y-4 text-sm">
                 <div>
                   <p className="text-xs text-neutral-500 uppercase tracking-wide">Langue</p>
-                  <p className="font-medium text-neutral-900">Portugais</p>
+                  <p className="font-medium text-neutral-900">{countryInfo.languages || "Information non disponible"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-neutral-500 uppercase tracking-wide">Devise</p>
-                  <p className="font-medium text-neutral-900">Franc CFA (XOF)</p>
+                  <p className="font-medium text-neutral-900">{countryInfo.currency || "Information non disponible"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-neutral-500 uppercase tracking-wide">Décalage horaire</p>
-                  <p className="font-medium text-neutral-900">UTC+00</p>
+                  <p className="font-medium text-neutral-900">{countryInfo.timezone || "Information non disponible"}</p>
                 </div>
               </div>
             </div>
 
             {/* Budget Summary */}
-            <div className="bg-white border border-neutral-200/50 rounded-lg p-6">
+            <div className="bg-white border border-neutral-100 rounded-lg p-6">
               <h3 className="font-semibold text-neutral-900 mb-4">Budget récapitulatif</h3>
               <div className="flex items-center justify-center mb-4">
                 <div className="relative w-32 h-32">
                   <svg className="w-full h-full transform -rotate-90">
                     <circle cx="64" cy="64" r="60" fill="none" stroke="#e5e7eb" strokeWidth="8" />
-                    <circle cx="64" cy="64" r="60" fill="none" stroke="#3b82f6" strokeWidth="8" strokeDasharray="120 352" />
+                    <circle cx="64" cy="64" r="60" fill="none" stroke="#d97706" strokeWidth="8" strokeDasharray="120 352" />
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
@@ -353,15 +607,27 @@ export default function TripDetailPremium() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-neutral-600">Hébergement</span>
-                  <span className="font-semibold text-neutral-900">{trip.budget ? Math.round(trip.budget * 0.4) : "—"}€</span>
+                  <span className="font-semibold text-neutral-900">
+                    {budgetBreakdown?.accommodation ? `${budgetBreakdown.accommodation}€` : "—"}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-neutral-600">Activités</span>
-                  <span className="font-semibold text-neutral-900">{trip.budget ? Math.round(trip.budget * 0.3) : "—"}€</span>
+                  <span className="font-semibold text-neutral-900">
+                    {budgetBreakdown?.activities ? `${budgetBreakdown.activities}€` : "—"}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-neutral-600">Restauration</span>
-                  <span className="font-semibold text-neutral-900">{trip.budget ? Math.round(trip.budget * 0.3) : "—"}€</span>
+                  <span className="font-semibold text-neutral-900">
+                    {budgetBreakdown?.food ? `${budgetBreakdown.food}€` : "—"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-neutral-600">Transport/Local</span>
+                  <span className="font-semibold text-neutral-900">
+                    {budgetBreakdown?.transport ? `${budgetBreakdown.transport}€` : "—"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -371,7 +637,7 @@ export default function TripDetailPremium() {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-lg text-white font-semibold py-3 rounded-lg transition-all flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:shadow-lg text-white font-semibold py-3 rounded-lg transition-all flex items-center justify-center gap-2"
               >
                 <Share2 className="w-4 h-4" />
                 Partager le voyage

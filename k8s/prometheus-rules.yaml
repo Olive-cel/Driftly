@@ -1,0 +1,110 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: driftly-alerts
+  namespace: driftly
+  labels:
+    app.kubernetes.io/name: driftly-app
+    app.kubernetes.io/part-of: driftly
+    release: monitoring
+spec:
+  groups:
+    # ────────────────────────────────────────────────────────────────
+    # Alertes HTTP
+    # ────────────────────────────────────────────────────────────────
+    - name: driftly-http
+      interval: 30s
+      rules:
+        # Alerte: Taux d'erreurs HTTP élevé
+        - alert: DriftlyHighErrorRate
+          expr: |
+            (
+              sum(rate(driftly_http_requests_total{status=~"5.."}[5m]))
+              /
+              sum(rate(driftly_http_requests_total[5m]))
+            ) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            app: driftly
+          annotations:
+            summary: "Driftly: Taux d'erreurs HTTP élevé (>5%)"
+            description: "Le taux d'erreurs HTTP pour Driftly est supérieur à 5% depuis 5 minutes."
+
+        # Alerte: Latence HTTP élevée
+        - alert: DriftlyHighLatency
+          expr: |
+            histogram_quantile(0.95, sum(rate(driftly_http_request_duration_seconds_bucket[5m])) by (le))
+            > 2
+          for: 5m
+          labels:
+            severity: warning
+            app: driftly
+          annotations:
+            summary: "Driftly: Latence HTTP élevée (p95 > 2s)"
+            description: "La latence p95 pour Driftly est supérieure à 2 secondes depuis 5 minutes."
+
+    # ────────────────────────────────────────────────────────────────
+    # Alertes génération itinéraires
+    # ────────────────────────────────────────────────────────────────
+    - name: driftly-itinerary
+      interval: 30s
+      rules:
+        # Alerte: Erreurs de génération itinéraires élevées
+        - alert: DriftlyItineraryGenerationErrors
+          expr: |
+            rate(driftly_itinerary_generated_total{status="error"}[5m]) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+            app: driftly
+          annotations:
+            summary: "Driftly: Erreurs de génération itinéraire élevées"
+            description: "Le taux d'erreurs de génération itinéraire est supérieur à 0.1/s depuis 5 minutes."
+
+    # ────────────────────────────────────────────────────────────────
+    # Alertes disponibilité
+    # ────────────────────────────────────────────────────────────────
+    - name: driftly-availability
+      interval: 30s
+      rules:
+        # Alerte: Application indisponible
+        - alert: DriftlyAppDown
+          expr: up{job="driftly-app"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            app: driftly
+          annotations:
+            summary: "Driftly: Application indisponible"
+            description: "L'application Driftly est indisponible depuis 2 minutes."
+
+    # ────────────────────────────────────────────────────────────────
+    # Alertes erreurs applicatives
+    # ────────────────────────────────────────────────────────────────
+    - name: driftly-errors
+      interval: 30s
+      rules:
+        # Alerte: Erreurs OpenAI élevées
+        - alert: DriftlyOpenAIErrors
+          expr: |
+            rate(driftly_openai_requests_total{status="error"}[5m]) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            app: driftly
+          annotations:
+            summary: "Driftly: Erreurs OpenAI élevées"
+            description: "Le taux d'erreurs OpenAI est supérieur à 0.05/s depuis 5 minutes."
+
+        # Alerte: Erreurs Pexels élevées
+        - alert: DriftlyPexelsErrors
+          expr: |
+            rate(driftly_pexels_requests_total{status="error"}[5m]) > 0.1
+          for: 5m
+          labels:
+            severity: info
+            app: driftly
+          annotations:
+            summary: "Driftly: Erreurs Pexels élevées"
+            description: "Le taux d'erreurs Pexels est supérieur à 0.1/s depuis 5 minutes."

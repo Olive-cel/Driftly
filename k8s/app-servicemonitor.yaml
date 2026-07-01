@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: driftly-app
+  namespace: driftly
+  labels:
+    app.kubernetes.io/name: driftly-app
+    app.kubernetes.io/part-of: driftly
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: driftly-app
+  endpoints:
+    - port: http
+      path: /api/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      scheme: http

@@ -29,7 +29,7 @@ export function Tabs({ tabs, defaultTab = tabs[0].id, children }: TabsProps) {
             onClick={() => setActiveTab(tab.id)}
             className={`pb-4 px-2 font-medium text-sm whitespace-nowrap transition-colors duration-200 flex items-center gap-2 ${
               activeTab === tab.id
-                ? "text-blue-600"
+                ? "text-amber-600"
                 : "text-neutral-600 hover:text-neutral-900"
             }`}
             whileHover={{ scale: 1.05 }}
