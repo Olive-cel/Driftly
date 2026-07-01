@@ -27,10 +27,10 @@ const navItems: Array<{ icon: LucideIcon; label: string; href: string }> = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" as never },
   { icon: Plane, label: "Mes voyages", href: "/dashboard/trips" as never },
   { icon: MapPin, label: "Itinéraires", href: "/dashboard/trips" as never },
-  { icon: Lightbulb, label: "Inspiration", href: "/dashboard" as never },
-  { icon: Heart, label: "Favoris", href: "/dashboard" as never },
-  { icon: Bell, label: "Notifications", href: "/dashboard" as never },
-  { icon: Settings, label: "Paramètres", href: "/dashboard" as never },
+  { icon: Lightbulb, label: "Inspiration", href: "/dashboard/inspiration" as never },
+  { icon: Heart, label: "Favoris", href: "/dashboard/favorites" as never },
+  { icon: Bell, label: "Notifications", href: "/dashboard/notifications" as never },
+  { icon: Settings, label: "Paramètres", href: "/dashboard/settings" as never },
 ];
 
 const containerVariants = {

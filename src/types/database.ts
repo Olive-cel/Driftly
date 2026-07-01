@@ -171,6 +171,45 @@ export interface Database {
         };
         Relationships: [];
       };
+      favorites: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: "trip" | "inspiration";
+          item_id: string;
+          title: string;
+          destination: string;
+          country: string | null;
+          image_url: string | null;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          type: "trip" | "inspiration";
+          item_id: string;
+          title: string;
+          destination: string;
+          country?: string | null;
+          image_url?: string | null;
+          metadata?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          type?: "trip" | "inspiration";
+          item_id?: string;
+          title?: string;
+          destination?: string;
+          country?: string | null;
+          image_url?: string | null;
+          metadata?: Json;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
