@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getInspirations, type Inspiration } from "@/lib/inspirations-service";
 import { searchImage } from "@/lib/pexels";
 
+export const dynamic = "force-dynamic";
+
 /**
  * GET /api/inspirations
  * 

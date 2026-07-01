@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { generateHotelRecommendations, getMockHotels, type HotelRecommendation } from "@/lib/hotels";
 import type { Database } from "@/types/database";
 
+export const dynamic = "force-dynamic";
+
 type HotelSearchInsert = Database["public"]["Tables"]["hotel_searches"]["Insert"];
 
 interface RouteParams {

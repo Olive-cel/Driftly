@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { searchFlightOffers, getCityCode, type NormalizedFlightOffer } from "@/lib/amadeus";
 import type { Database } from "@/types/database";
 
+export const dynamic = "force-dynamic";
+
 type FlightSearchInsert = Database["public"]["Tables"]["flight_searches"]["Insert"];
 
 interface RouteParams {

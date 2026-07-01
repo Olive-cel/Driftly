@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { getFavorites, toggleFavorite, removeFavorite } from "@/lib/favorites-service";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const supabase = createClient();

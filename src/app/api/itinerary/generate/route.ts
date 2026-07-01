@@ -4,6 +4,8 @@ import { validateItineraryRequest } from "@/types/itinerary";
 import { generateItinerary } from "@/services/ai/generate-itinerary";
 import type { Database } from "@/types/database";
 
+export const dynamic = "force-dynamic";
+
 const MODEL = "gpt-4o-mini";
 const PROMPT_VERSION = "v1.0";
 
