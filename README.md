@@ -1,8 +1,6 @@
 # Driftly — Plateforme de planification de voyages intelligente
 
-Driftly est une application web qui utilise l'intelligence artificielle pour générer des itinéraires de voyage personnalisés. Ce dépôt contient le code applicatif ainsi que l'ensemble de la configuration DevOps (Docker, Kubernetes, Terraform, monitoring) réalisée dans le cadre du module **DevOps — Kubernetes / Terraform** à l'EEMI.
-
-**Objectif pédagogique** : concevoir et déployer une plateforme applicative scalable sur Kubernetes en intégrant les principes de sobriété numérique (GreenOps), le tout exécutable en local sans dépendance à des services cloud payants.
+Driftly est une application web qui utilise l'intelligence artificielle pour générer des itinéraires de voyage personnalisés. Ce dépôt contient le code applicatif ainsi que l'ensemble de la configuration DevOps (Docker, Kubernetes, Terraform, monitoring) 
 
 ---
 
@@ -37,15 +35,17 @@ Driftly est une application web qui utilise l'intelligence artificielle pour gé
     localhost:3001  (Grafana)
 ```
 
-| Composant | Rôle | Technologie |
-|---|---|---|
-| **Frontend + API** | Interface utilisateur et routes API | Next.js 14, TypeScript, Tailwind CSS |
-| **Base de données** | Stockage des profils, voyages, itinéraires | PostgreSQL 16 |
-| **IA** | Génération d'itinéraires personnalisés | Anthropic Claude (optionnel en local) |
-| **Orchestration** | Déploiement et scaling des conteneurs | Kubernetes via kind |
-| **Autoscaling** | Ajustement automatique du nombre de pods | HPA (CPU 70%) |
-| **Provisioning** | Création de l'infrastructure locale | Terraform |
-| **Monitoring** | Visualisation des métriques en temps réel | Prometheus + Grafana |
+
+| Composant           | Rôle                                       | Technologie                           |
+| ------------------- | ------------------------------------------ | ------------------------------------- |
+| **Frontend + API**  | Interface utilisateur et routes API        | Next.js 14, TypeScript, Tailwind CSS  |
+| **Base de données** | Stockage des profils, voyages, itinéraires | PostgreSQL 16                         |
+| **IA**              | Génération d'itinéraires personnalisés     | Anthropic Claude (optionnel en local) |
+| **Orchestration**   | Déploiement et scaling des conteneurs      | Kubernetes via kind                   |
+| **Autoscaling**     | Ajustement automatique du nombre de pods   | HPA (CPU 70%)                         |
+| **Provisioning**    | Création de l'infrastructure locale        | Terraform                             |
+| **Monitoring**      | Visualisation des métriques en temps réel  | Prometheus + Grafana                  |
+
 
 ---
 
@@ -84,21 +84,23 @@ driftly/
 
 ## 3. Prérequis
 
-| Outil | Version | Installation (macOS) |
-|---|---|---|
-| Docker Desktop | 24+ | [docker.com](https://docs.docker.com/get-docker/) |
-| kubectl | 1.28+ | `brew install kubectl` |
-| kind | 0.20+ | `brew install kind` |
-| Terraform | 1.5+ | `brew install terraform` |
-| Helm | 3.12+ | `brew install helm` |
-| hey (test de charge) | - | `brew install hey` |
-| k6 (test de charge) | - | `brew install k6` |
+
+| Outil                | Version | Installation (macOS)                              |
+| -------------------- | ------- | ------------------------------------------------- |
+| Docker Desktop       | 24+     | [docker.com](https://docs.docker.com/get-docker/) |
+| kubectl              | 1.28+   | `brew install kubectl`                            |
+| kind                 | 0.20+   | `brew install kind`                               |
+| Terraform            | 1.5+    | `brew install terraform`                          |
+| Helm                 | 3.12+   | `brew install helm`                               |
+| hey (test de charge) | -       | `brew install hey`                                |
+| k6 (test de charge)  | -       | `brew install k6`                                 |
+
 
 ---
 
 ## 4. Installation et lancement
 
-### Option A — Avec Terraform (recommandé)
+### Option A — Avec Terraform 
 
 Terraform provisionne automatiquement le cluster, le namespace, metrics-server et le monitoring.
 
@@ -165,6 +167,7 @@ curl http://localhost:3000/api/health
 ### Variables d'environnement
 
 Les secrets ne sont jamais embarqués dans l'image Docker. Ils sont gérés via :
+
 - `k8s/configmap.yaml` pour les variables non sensibles
 - `k8s/secret.yaml` pour les variables sensibles (credentials DB, clés API)
 
@@ -189,7 +192,7 @@ helm install monitoring prometheus-community/kube-prometheus-stack \
 kubectl port-forward svc/monitoring-grafana 3001:80 -n monitoring
 ```
 
-- **URL** : http://localhost:3001
+- **URL** : [http://localhost:3001](http://localhost:3001)
 - **Utilisateur** : `admin`
 - **Mot de passe** :
 
@@ -200,11 +203,13 @@ kubectl get secret monitoring-grafana -n monitoring \
 
 ### Dashboards recommandes
 
-| Dashboard | Ce qu'il montre |
-|---|---|
+
+| Dashboard                                         | Ce qu'il montre                                        |
+| ------------------------------------------------- | ------------------------------------------------------ |
 | Kubernetes / Compute Resources / Namespace (Pods) | CPU et memoire de tous les pods du namespace `driftly` |
-| Kubernetes / Compute Resources / Pod | Detail par pod, utile pour comparer les replicas |
-| Node Exporter / Nodes | Ressources globales du noeud kind |
+| Kubernetes / Compute Resources / Pod              | Detail par pod, utile pour comparer les replicas       |
+| Node Exporter / Nodes                             | Ressources globales du noeud kind                      |
+
 
 ---
 
@@ -252,22 +257,26 @@ Simultanement, observer les courbes dans Grafana (dashboard Namespace Pods).
 
 Le Horizontal Pod Autoscaler ajuste dynamiquement le nombre de replicas de l'application.
 
-| Parametre | Valeur | Justification |
-|---|---|---|
-| `minReplicas` | 2 | Haute disponibilite minimale |
-| `maxReplicas` | 5 | Plafond adapte a un cluster local |
-| `CPU target` | 70% | Marge suffisante avant saturation |
-| Scale up | +1 pod / 60s | Montee progressive, evite l'emballement |
-| Scale down | -1 pod / 120s | Descente lente, evite le flapping |
+
+| Parametre     | Valeur        | Justification                           |
+| ------------- | ------------- | --------------------------------------- |
+| `minReplicas` | 2             | Haute disponibilite minimale            |
+| `maxReplicas` | 5             | Plafond adapte a un cluster local       |
+| `CPU target`  | 70%           | Marge suffisante avant saturation       |
+| Scale up      | +1 pod / 60s  | Montee progressive, evite l'emballement |
+| Scale down    | -1 pod / 120s | Descente lente, evite le flapping       |
+
 
 **Fonctionnement** : toutes les 15 secondes, le HPA calcule `replicas = actuelles x (CPU moyenne / cible)`. Si les pods consomment en moyenne plus de 70% de leurs `requests.cpu` (100m), Kubernetes ajoute des pods. Quand la charge diminue, il redescend progressivement vers 2 replicas.
 
 ### Ressources configurees
 
-| Service | Requests | Limits |
-|---|---|---|
+
+| Service         | Requests             | Limits               |
+| --------------- | -------------------- | -------------------- |
 | **driftly-app** | 100m CPU / 256Mi RAM | 500m CPU / 512Mi RAM |
-| **PostgreSQL** | 250m CPU / 512Mi RAM | 500m CPU / 1Gi RAM |
+| **PostgreSQL**  | 250m CPU / 512Mi RAM | 500m CPU / 1Gi RAM   |
+
 
 ---
 
@@ -278,6 +287,7 @@ L'analyse GreenOps evalue l'efficacite energetique et le dimensionnement des res
 ### Dimensionnement des ressources
 
 Les `requests` sont calibrees au plus juste :
+
 - **App Next.js** : 100m CPU en idle, ce qui correspond au comportement observe au repos. Les `limits` a 500m laissent de la marge pour les pics sans surprovisionnement permanent.
 - **PostgreSQL** : 250m CPU en requests car les requetes SQL necessitent plus de CPU de base. Les limits a 500m evitent la competition avec les pods applicatifs.
 
@@ -290,6 +300,7 @@ Les `requests` sont calibrees au plus juste :
 ### Stabilite sous charge
 
 Les tests de charge montrent que :
+
 - Le systeme absorbe les pics via le HPA sans crash ni restart.
 - La consommation CPU redescend au niveau de base apres la charge.
 - Les readiness/liveness probes evitent de router du trafic vers des pods non prets.
