@@ -33,11 +33,31 @@ resource "kind_cluster" "driftly" {
 
     node {
       role = "control-plane"
+
       extra_port_mappings {
         container_port = 30000
         host_port      = 30000
         protocol       = "TCP"
       }
+      extra_port_mappings {
+        container_port = 80
+        host_port      = 80
+        protocol       = "TCP"
+      }
+      extra_port_mappings {
+        container_port = 443
+        host_port      = 443
+        protocol       = "TCP"
+      }
+
+      kubeadm_config_patches = [
+        <<-EOF
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+        EOF
+      ]
     }
 
     node {
@@ -89,6 +109,44 @@ resource "helm_release" "metrics_server" {
   set {
     name  = "args[0]"
     value = "--kubelet-insecure-tls"
+  }
+
+  depends_on = [kind_cluster.driftly]
+}
+
+# ── Ingress NGINX Controller ──────────────────────────────
+
+resource "helm_release" "ingress_nginx" {
+  name             = "ingress-nginx"
+  repository       = "https://kubernetes.github.io/ingress-nginx"
+  chart            = "ingress-nginx"
+  namespace        = "ingress-nginx"
+  create_namespace = true
+
+  set {
+    name  = "controller.hostPort.enabled"
+    value = "true"
+  }
+  set {
+    name  = "controller.service.type"
+    value = "NodePort"
+  }
+  set {
+    name  = "controller.nodeSelector.ingress-ready"
+    value = "true"
+    type  = "string"
+  }
+  set {
+    name  = "controller.tolerations[0].key"
+    value = "node-role.kubernetes.io/control-plane"
+  }
+  set {
+    name  = "controller.tolerations[0].operator"
+    value = "Exists"
+  }
+  set {
+    name  = "controller.tolerations[0].effect"
+    value = "NoSchedule"
   }
 
   depends_on = [kind_cluster.driftly]

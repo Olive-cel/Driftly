@@ -11,7 +11,8 @@ spec:
   selector:
     app.kubernetes.io/name: driftly-app
   ports:
-    - port: 3000
-      targetPort: 3000
+    - name: http
+      port: 3000
+      targetPort: http
       nodePort: 30000
       protocol: TCP

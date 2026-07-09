@@ -29,9 +29,10 @@ kubectl get pods -n monitoring
 kubectl port-forward svc/monitoring-grafana 3001:80 -n monitoring
 ```
 
-URL: http://localhost:3001  
+URL: [http://localhost:3001](http://localhost:3001)  
 User: `admin`  
 Password: 
+
 ```bash
 kubectl get secret monitoring-grafana -n monitoring \
   -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
@@ -40,6 +41,7 @@ kubectl get secret monitoring-grafana -n monitoring \
 ## 4. Dashboards disponibles
 
 ### Dashboards Kubernetes pré-installés
+
 - **Kubernetes / Compute Resources / Namespace (Pods)** - CPU & mémoire pods
 - **Kubernetes / Compute Resources / Pod** - Détails par pod
 - **Node Exporter / Nodes** - Ressources nœud
@@ -76,7 +78,7 @@ Doit retourner du texte Prometheus avec les métriques Driftly.
 kubectl port-forward -n monitoring svc/prometheus-operated 9090:9090
 ```
 
-URL: http://localhost:9090  
+URL: [http://localhost:9090](http://localhost:9090)  
 Aller à **Status → Targets** pour vérifier que `driftly-app` est **UP**.
 
 ## 6. Appliquer ServiceMonitor et PrometheusRules
@@ -122,36 +124,42 @@ process_uptime_seconds / 86400
 
 Configurées dans `k8s/prometheus-rules.yaml`:
 
-| Alerte | Condition | Sévérité |
-|--------|-----------|----------|
-| **DriftlyHighErrorRate** | Erreurs 5xx > 5% (5min) | ⚠️ Warning |
-| **DriftlyHighLatency** | p95 latence > 2s (5min) | ⚠️ Warning |
-| **DriftlyItineraryGenerationErrors** | Erreurs génération > 0.1/s (5min) | ⚠️ Warning |
-| **DriftlyAppDown** | App indisponible (2min) | 🔴 Critical |
-| **DriftlyOpenAIErrors** | Erreurs OpenAI > 0.05/s (5min) | ⚠️ Warning |
-| **DriftlyPexelsErrors** | Erreurs Pexels > 0.1/s (5min) | ℹ️ Info |
 
-Voir les alertes: http://localhost:9090/alerts
+| Alerte                               | Condition                         | Sévérité    |
+| ------------------------------------ | --------------------------------- | ----------- |
+| **DriftlyHighErrorRate**             | Erreurs 5xx > 5% (5min)           | ⚠️ Warning  |
+| **DriftlyHighLatency**               | p95 latence > 2s (5min)           | ⚠️ Warning  |
+| **DriftlyItineraryGenerationErrors** | Erreurs génération > 0.1/s (5min) | ⚠️ Warning  |
+| **DriftlyAppDown**                   | App indisponible (2min)           | 🔴 Critical |
+| **DriftlyOpenAIErrors**              | Erreurs OpenAI > 0.05/s (5min)    | ⚠️ Warning  |
+| **DriftlyPexelsErrors**              | Erreurs Pexels > 0.1/s (5min)     | ℹ️ Info     |
+
+
+Voir les alertes: [http://localhost:9090/alerts](http://localhost:9090/alerts)
 
 ## 9. Scénario test de charge
 
 ### Terminal 1: App
+
 ```bash
 kubectl port-forward -n driftly svc/driftly-app 3000:3000
 ```
 
 ### Terminal 2: Grafana
+
 ```bash
 kubectl port-forward svc/monitoring-grafana 3001:80 -n monitoring
 ```
 
 ### Terminal 3: Générer charge
+
 ```bash
 brew install hey
 hey -z 30s -c 50 http://localhost:3000/api/health
 ```
 
 Ou k6:
+
 ```bash
 brew install k6
 k6 run --vus 50 --duration 30s - <<'EOF'
@@ -165,29 +173,16 @@ EOF
 ```
 
 ### Observer
+
 - Dashboard: Driftly - Application Monitoring
-- Prometheus: http://localhost:9090/graph
+- Prometheus: [http://localhost:9090/graph](http://localhost:9090/graph)
 - HPA: `kubectl get hpa -n driftly -w`
 - Pods: `kubectl get pods -n driftly -w`
 
-## 10. Limites actuelles
-
-✅ Implémenté:
-- Requêtes HTTP (nombre, latence, statut)
-- Génération itinéraires (nombre, durée, erreurs)
-- Appels OpenAI/Pexels (nombre, erreurs)
-- Métriques Node.js (CPU, mémoire, uptime)
-- Alertes Prometheus
-
-❌ À faire:
-- Tracing distribué (OpenTelemetry)
-- Sentry
-- Alertes Slack/Email
-- Métriques Supabase
-
-## 11. Désinstaller
+## 10. Désinstaller
 
 ```bash
 helm uninstall monitoring -n monitoring
 kubectl delete namespace monitoring
 ```
+

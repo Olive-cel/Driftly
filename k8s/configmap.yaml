@@ -7,5 +7,5 @@ metadata:
     app.kubernetes.io/part-of: driftly
 data:
   NEXT_PUBLIC_APP_URL: "http://localhost:3000"
-  NEXT_PUBLIC_SUPABASE_URL: "https://CHANGEME.supabase.co"
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: "CHANGEME"
+  NEXT_PUBLIC_SUPABASE_URL: "https://your-project.supabase.co"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: "your-anon-key"

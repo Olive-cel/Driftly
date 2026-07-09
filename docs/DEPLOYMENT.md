@@ -23,10 +23,6 @@
 | **Kubernetes**   | Orchestrated | Custom   | 30 min | ❌    |
 
 
-### Recommandé pour RNCP
-
-**Vercel** est recommandé pour la démo (free tier, déploiement facile)
-
 ## Déploiement Vercel
 
 ### 1. Setup Initial
@@ -89,7 +85,7 @@ git push origin main
 
 ### Déploiement automatique
 
-- **main branch** → Production (https://driftly-two.vercel.app)
+- **main branch** → Production ([https://driftly-two.vercel.app](https://driftly-two.vercel.app))
 - **PR branches** → Preview URLs ([https://driftly-pr-1.vercel.app](https://driftly-pr-1.vercel.app))
 
 ## Docker & Kubernetes

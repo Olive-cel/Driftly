@@ -153,15 +153,52 @@ kubectl get svc -n driftly
 kubectl get hpa -n driftly
 ```
 
-### Accéder a l'application
+### Acceder a l'application
 
 ```bash
-# Via NodePort
+# Via Ingress (necessite /etc/hosts configure)
+curl http://app.driftly.local/api/health
+
+# Via NodePort (fallback)
 curl http://localhost:30000/api/health
 
 # Via port-forward
 kubectl port-forward -n driftly svc/driftly-app 3000:3000
 curl http://localhost:3000/api/health
+```
+
+### Ingress (acces par hostname)
+
+L'Ingress Controller NGINX route le trafic HTTP vers les services via des hostnames locaux.
+
+**Configurer `/etc/hosts`** :
+
+```bash
+sudo sh -c 'echo "127.0.0.1 app.driftly.local grafana.driftly.local" >> /etc/hosts'
+```
+
+**Appliquer les Ingress** :
+
+```bash
+kubectl apply -f k8s/ingress-app.yaml
+kubectl apply -f k8s/ingress-grafana.yaml
+```
+
+**Verifier** :
+
+```bash
+kubectl get ingress -A
+```
+
+| Hostname | URL | Service |
+|---|---|---|
+| `app.driftly.local` | http://app.driftly.local | Application Driftly |
+| `grafana.driftly.local` | http://grafana.driftly.local | Grafana (monitoring) |
+
+Prometheus n'est **pas expose via Ingress** volontairement — il contient des metriques internes sensibles (CPU, memoire, erreurs, endpoints). L'acces reste via port-forward uniquement :
+
+```bash
+kubectl port-forward -n monitoring svc/prometheus-operated 9090:9090
 ```
 
 ### Variables d'environnement

@@ -236,7 +236,7 @@ Consultez la documentation complète:
 
 | Service        | URL                                                                          |
 | -------------- | ---------------------------------------------------------------------------- |
-| App Production | [https://driftly-two.vercel.app](https://driftly-two.vercel.app)                     |
+| App Production | [https://driftly-two.vercel.app](https://driftly-two.vercel.app)             |
 | Repository     | [https://github.com/Olive-cel/Driftly](https://github.com/Olive-cel/Driftly) |
 | Supabase       | [https://supabase.com](https://supabase.com)                                 |
 | OpenAI         | [https://platform.openai.com](https://platform.openai.com)                   |
@@ -284,4 +284,3 @@ Discussions générales: [GitHub Discussions](https://github.com/yourusername/dr
 ## Auteurs & Contributeurs
 
 **Développement Principal**: Olive (Alternante développeur fullstack)
-
